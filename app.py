@@ -5,6 +5,7 @@ from database import init_db, get_db
 from auth import hash_password, verify_password, create_token, token_required
 import json
 from phishing_content import PHISHING_QUESTIONS
+from digital_arrest_scam import DIGITAL_ARREST_SCENARIO
 app = Flask(__name__)
 CORS(app)
 
@@ -215,6 +216,41 @@ def debug_attempts():
         return jsonify({'attempts': [dict(r) for r in rows]})
     finally:
         conn.close()
+
+# ============ DIGITAL ARREST MODULE (Milestone 4) ============
+
+@app.route('/api/digital-arrest/scenario')
+@token_required
+def digital_arrest_scenario():
+    # Returns the full scenario. 
+    # Note: In a high-security production app, you'd hide the 'is_correct' flags 
+    # and evaluate server-side. For this UI experience, client-side is smoother.
+    return jsonify(DIGITAL_ARREST_SCENARIO)
+
+
+@app.route('/api/digital-arrest/submit', methods=['POST'])
+@token_required
+def digital_arrest_submit():
+    data = request.get_json(silent=True) or {}
+    score = int(data.get('score', 0))
+
+    conn = get_db()
+    try:
+        conn.execute(
+            'INSERT INTO attempts (user_id, module_type, score, answers_json) '
+            'VALUES (?, ?, ?, ?)',
+            (g.user_id, 'digital_arrest', score, json.dumps({'completed': True}))
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return jsonify({'status': 'ok'})
+
+
+@app.route('/digital-arrest')
+def digital_arrest_page():
+    return render_template('digital_arrest.html')
 
 
 if __name__ == '__main__':
