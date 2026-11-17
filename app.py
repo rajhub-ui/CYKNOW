@@ -8,6 +8,7 @@ from phishing_content import PHISHING_QUESTIONS
 from digital_arrest_scam import DIGITAL_ARREST_SCENARIO
 from contact_content import GOVT_CONTACTS
 from malicious_app_content import APP_QUESTIONS
+from learning_content import LEARNING_MODULES
 app = Flask(__name__)
 CORS(app)
 
@@ -387,6 +388,12 @@ def malicious_app_submit():
 @app.route('/malicious-app')
 def malicious_app_page():
     return render_template('malicious_app.html')
+
+# ============ LEARNING CENTER (New Pre-requisite) ============
+
+@app.route('/learning')
+def learning_page():
+    return render_template('learning.html', modules=LEARNING_MODULES)
 
 
 if __name__ == '__main__':

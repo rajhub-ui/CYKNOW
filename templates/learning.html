@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CyberFit — Learning Center</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #f0f4f8; margin: 0; padding: 2rem 1rem; color: #222; }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        h1 { color: #1a237e; margin: 0; font-size: 1.8rem; }
+        .back-btn { background: #1a237e; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
+
+        .module-card { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .module-card h2 { color: #1a237e; margin-top: 0; border-bottom: 2px solid #e3f2fd; padding-bottom: 0.5rem; }
+        .module-card .intro { font-size: 1.1rem; color: #444; font-style: italic; margin-bottom: 1.5rem; background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #3949ab; }
+        
+        ul.points { list-style: none; padding: 0; margin: 0 0 1.5rem 0; }
+        ul.points li { position: relative; padding-left: 2rem; margin-bottom: 1rem; font-size: 1rem; line-height: 1.5; color: #333; }
+        ul.points li::before { content: '✓'; position: absolute; left: 0; color: #2e7d32; font-weight: bold; font-size: 1.2rem; }
+
+        .test-btn { display: inline-block; background: #1a237e; color: white; text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; transition: background 0.2s; }
+        .test-btn:hover { background: #0d1657; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📚 Learning Center</h1>
+            <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
+        </header>
+
+        <!-- Loop through the Python dictionary and render each module -->
+        {% for key, mod in modules.items() %}
+        <div class="module-card">
+            <h2>{{ mod.title }}</h2>
+            <div class="intro">{{ mod.intro }}</div>
+            
+            <ul class="points">
+                {% for point in mod.points %}
+                <li>{{ point }}</li>
+                {% endfor %}
+            </ul>
+
+            <!-- Link to the corresponding test based on the key -->
+            {% if key == 'phishing' %}
+                <a href="/phishing" class="test-btn">Take Phishing Test →</a>
+            {% elif key == 'digital_arrest' %}
+                <a href="/digital-arrest" class="test-btn">Take Digital Arrest Test →</a>
+            {% elif key == 'malicious_app' %}
+                <a href="/malicious-app" class="test-btn">Take Malicious App Test →</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>
