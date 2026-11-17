@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CyberFit — Auth Test</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; background: #f5f5f5; }
+        h1 { color: #1a237e; margin-bottom: 0.25rem; }
+        .sub { color: #666; margin-bottom: 1.5rem; }
+        .card { background: white; padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        h3 { margin-top: 0; color: #333; }
+        input, button { padding: 0.5rem; margin: 0.25rem 0; font-size: 1rem; }
+        input { width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { background: #1a237e; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 0.5rem 1rem; margin-top: 0.5rem; }
+        button:hover { background: #0d1657; }
+        pre { background: #263238; color: #aed581; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; white-space: pre-wrap; word-break: break-word; }
+        .token-box { background: #fff3e0; padding: 0.5rem; border-radius: 4px; word-break: break-all; font-family: monospace; font-size: 0.8rem; margin-top: 0.5rem; }
+        .ok { color: #2e7d32; font-weight: 600; }
+        .err { color: #c62828; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ CyberFit Auth Test</h1>
+    <p class="sub">Milestone 2 — Register / Login / Protected Route</p>
+
+    <div class="card">
+        <h3>1. Register</h3>
+        <input id="reg-name" placeholder="Full name" />
+        <input id="reg-email" placeholder="Email (e.g. test@example.com)" />
+        <input id="reg-password" type="password" placeholder="Password (min 6 chars)" />
+        <button onclick="register()">Register</button>
+    </div>
+
+    <div class="card">
+        <h3>2. Login</h3>
+        <input id="log-email" placeholder="Email" />
+        <input id="log-password" type="password" placeholder="Password" />
+        <button onclick="login()">Login</button>
+    </div>
+
+    <div class="card">
+        <h3>3. Get My Profile (protected)</h3>
+        <button onclick="getMe()">Call /api/auth/me</button>
+        <div id="token-display"><em>No token yet. Register or login first.</em></div>
+    </div>
+
+    <div class="card">
+        <h3>Response</h3>
+        <pre id="output">(nothing yet)</pre>
+    </div>
+
+    <script>
+        let token = '';
+
+        function show(data) {
+            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+        }
+
+        function updateTokenDisplay() {
+            document.getElementById('token-display').innerHTML =
+                '<div class="token-box">Saved token: ' + token.slice(0, 50) + '...</div>';
+        }
+
+        async function post(url, body) {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(body)
+            });
+            return { status: res.status, data: await res.json() };
+        }
+
+        async function register() {
+            const result = await post('/api/auth/register', {
+                name: document.getElementById('reg-name').value,
+                email: document.getElementById('reg-email').value,
+                password: document.getElementById('reg-password').value
+            });
+            if (result.data.token) { token = result.data.token; updateTokenDisplay(); }
+            show(result.data);
+        }
+
+        async function login() {
+            const result = await post('/api/auth/login', {
+                email: document.getElementById('log-email').value,
+                password: document.getElementById('log-password').value
+            });
+            if (result.data.token) { token = result.data.token; updateTokenDisplay(); }
+            show(result.data);
+        }
+
+        async function getMe() {
+            if (!token) { show({error: 'No token. Register or login first.'}); return; }
+            const res = await fetch('/api/auth/me', {
+                headers: {'Authorization': 'Bearer ' + token}
+            });
+            show(await res.json());
+        }
+    </script>
+</body>
+</html>
