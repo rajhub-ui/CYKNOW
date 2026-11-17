@@ -252,6 +252,80 @@ def digital_arrest_submit():
 def digital_arrest_page():
     return render_template('digital_arrest.html')
 
+# ============ DASHBOARD & REPORTING (Milestone 5) ============
+
+@app.route('/')
+def home():
+    """Redirect root to dashboard."""
+    from flask import redirect, url_for
+    return redirect('/dashboard')
+
+
+@app.route('/api/dashboard')
+@token_required
+def api_dashboard():
+    conn = get_db()
+    try:
+        # Get user info
+        user = conn.execute(
+            'SELECT name FROM users WHERE id = ?', (g.user_id,)
+        ).fetchone()
+        
+        # Get all attempts for this user (newest first)
+        attempts = conn.execute(
+            'SELECT module_type, score, attempted_at FROM attempts '
+            'WHERE user_id = ? ORDER BY attempted_at ASC', (g.user_id,)
+        ).fetchall()
+
+        attempts_list = [dict(a) for a in attempts]
+        
+        # Calculate overall Risk Reflex Score (average of latest attempt per module)
+        module_scores = {}
+        for a in attempts_list:
+            module_scores[a['module_type']] = a['score']  # latest overwrites older
+        
+        overall_score = int(sum(module_scores.values()) / len(module_scores)) if module_scores else 0
+
+        return jsonify({
+            'user_name': user['name'] if user else 'User',
+            'overall_score': overall_score,
+            'modules_completed': len(module_scores),
+            'attempts': attempts_list
+        })
+    finally:
+        conn.close()
+
+
+@app.route('/api/report-1930', methods=['POST'])
+@token_required
+def generate_report():
+    data = request.get_json(silent=True) or {}
+    scam_type = data.get('scam_type', 'Unknown')
+    description = data.get('description', 'No additional details provided.')
+
+    # Generate a pre-filled complaint template
+    report_text = f"""--- NATIONAL CYBER CRIME REPORTING PORTAL (MOCK) ---
+To: 1930 / cybercrime.gov.in
+Date: {datetime.now().strftime('%d-%b-%Y')}
+
+SUBJECT: Report of {scam_type}
+
+DESCRIPTION OF INCIDENT:
+{description}
+
+SUSPECT DETAILS:
+[If available, enter phone number, email, or UPI ID here]
+
+I request the authorities to take immediate action to prevent financial loss and track the perpetrators.
+--- END OF REPORT ---"""
+
+    return jsonify({'report_text': report_text})
+
+
+@app.route('/dashboard')
+def dashboard_page():
+    return render_template('dashboard.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=3000)

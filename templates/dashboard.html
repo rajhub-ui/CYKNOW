@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CyberFit — Dashboard</title>
+    <!-- Chart.js via CDN (0 MB install, instant) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #f0f4f8; margin: 0; padding: 2rem 1rem; color: #222; }
+        .container { max-width: 900px; margin: 0 auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        h1 { color: #1a237e; margin: 0; font-size: 1.8rem; }
+        .logout-btn { background: #c62828; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
+
+        /* Top Score Card */
+        .score-hero { background: linear-gradient(135deg, #1a237e, #3949ab); color: white; padding: 2rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(26,35,126,0.2); }
+        .score-hero h2 { margin: 0 0 0.5rem; font-size: 1.2rem; font-weight: 500; opacity: 0.9; }
+        .score-hero .num { font-size: 3.5rem; font-weight: 800; line-height: 1; }
+        .score-hero .sub { font-size: 1rem; opacity: 0.8; margin-top: 0.5rem; }
+
+        /* Grid Layout */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
+        
+        .card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; margin-bottom: 1rem; }
+
+        /* Module Links */
+        .module-link { display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8f9fa; border-radius: 8px; text-decoration: none; color: #333; font-weight: 600; margin-bottom: 0.75rem; transition: background 0.2s; }
+        .module-link:hover { background: #e3f2fd; }
+        .module-link .arrow { color: #1a237e; font-size: 1.2rem; }
+
+        /* Report Form */
+        select, textarea { width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; font-size: 0.95rem; margin-bottom: 1rem; }
+        textarea { resize: vertical; min-height: 100px; }
+        .btn-primary { background: #1a237e; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; }
+        .btn-primary:hover { background: #0d1657; }
+        
+        .report-output { background: #263238; color: #aed581; padding: 1rem; border-radius: 6px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; margin-top: 1rem; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ CyberFit Dashboard</h1>
+            <a href="/test" class="logout-btn" onclick="localStorage.removeItem('cyberfit_token');">Log Out</a>
+        </header>
+
+        <div class="score-hero">
+            <div>
+                <h2>Welcome back, <span id="user-name">...</span></h2>
+                <div class="sub">Your overall cyber-resilience score</div>
+            </div>
+            <div style="text-align: right;">
+                <div class="num" id="overall-score">0</div>
+                <div class="sub"><span id="modules-completed">0</span> modules completed</div>
+            </div>
+        </div>
+
+        <div class="grid">
+            <!-- Chart -->
+            <div class="card">
+                <h3>📈 Score History</h3>
+                <canvas id="scoreChart" height="200"></canvas>
+            </div>
+
+            <!-- Modules -->
+            <div class="card">
+                <h3>🎯 Training Modules</h3>
+                <a href="/phishing" class="module-link">
+                    <span>🎣 Phishing Simulation</span>
+                    <span class="arrow">→</span>
+                </a>
+                <a href="/digital-arrest" class="module-link">
+                    <span>🚨 Digital Arrest Scenario</span>
+                    <span class="arrow">→</span>
+                </a>
+                <!-- Placeholder for future module -->
+                <a href="#" class="module-link" style="opacity: 0.5; cursor: not-allowed;">
+                    <span>📱 Malicious App Quiz (Coming Soon)</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Report Generator -->
+        <div class="card">
+            <h3>📝 Quick Report Generator (1930 Mock)</h3>
+            <p style="font-size: 0.9rem; color: #666; margin-top: 0;">Generate a pre-filled complaint format to copy-paste into the official portal.</p>
+            <select id="scam-type">
+                <option value="Digital Arrest Scam">Digital Arrest Scam</option>
+                <option value="Phishing / Fake Link">Phishing / Fake Link</option>
+                <option value="Malicious App / APK">Malicious App / APK</option>
+                <option value="UPI / OTP Fraud">UPI / OTP Fraud</option>
+            </select>
+            <textarea id="scam-desc" placeholder="Briefly describe what happened (e.g., 'Received a WhatsApp call from a fake CBI officer demanding money...')"></textarea>
+            <button class="btn-primary" onclick="generateReport()">Generate Report Template</button>
+            <pre class="report-output" id="report-output"></pre>
+        </div>
+    </div>
+
+    <script>
+        const TOKEN_KEY = 'cyberfit_token';
+        const token = localStorage.getItem(TOKEN_KEY);
+        let chartInstance = null;
+
+        async function loadDashboard() {
+            if (!token) { window.location.href = '/test'; return; }
+
+            try {
+                const res = await fetch('/api/dashboard', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (!res.ok) { window.location.href = '/test'; return; }
+
+                // Set text
+                document.getElementById('user-name').textContent = data.user_name;
+                document.getElementById('overall-score').textContent = data.overall_score;
+                document.getElementById('modules-completed').textContent = data.modules_completed;
+
+                renderChart(data.attempts);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function renderChart(attempts) {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            
+            // Group attempts by date/label
+            const labels = attempts.map(a => {
+                const date = new Date(a.attempted_at);
+                const mod = a.module_type === 'phishing' ? 'Phishing' : 'Arrest';
+                return `${mod} (${date.getDate()}/${date.getMonth()+1})`;
+            });
+            const scores = attempts.map(a => a.score);
+            const colors = attempts.map(a => a.module_type === 'phishing' ? '#3949ab' : '#c62828');
+
+            if (chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Score (%)',
+                        data: scores,
+                        backgroundColor: colors,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true, max: 100 }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        async function generateReport() {
+            const type = document.getElementById('scam-type').value;
+            const desc = document.getElementById('scam-desc').value;
+
+            if (!desc.trim()) {
+                alert('Please enter a brief description.');
+                return;
+            }
+
+            const res = await fetch('/api/report-1930', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ scam_type: type, description: desc })
+            });
+            const data = await res.json();
+            
+            const output = document.getElementById('report-output');
+            output.textContent = data.report_text;
+            output.style.display = 'block';
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>
