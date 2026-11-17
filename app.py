@@ -6,6 +6,7 @@ from auth import hash_password, verify_password, create_token, token_required
 import json
 from phishing_content import PHISHING_QUESTIONS
 from digital_arrest_scam import DIGITAL_ARREST_SCENARIO
+from contact_content import GOVT_CONTACTS
 app = Flask(__name__)
 CORS(app)
 
@@ -325,6 +326,12 @@ I request the authorities to take immediate action to prevent financial loss and
 @app.route('/dashboard')
 def dashboard_page():
     return render_template('dashboard.html')
+
+# ============ EMERGENCY CONTACTS (New Feature) ============
+
+@app.route('/contacts')
+def contacts_page():
+    return render_template('contacts.html', contacts=GOVT_CONTACTS)
 
 
 if __name__ == '__main__':

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CyberFit — Emergency Contacts</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; background: #f0f4f8; margin: 0; padding: 2rem 1rem; color: #222; }
+        .container { max-width: 800px; margin: 0 auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        h1 { color: #1a237e; margin: 0; font-size: 1.8rem; }
+        .back-btn { background: #1a237e; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
+
+        .notice { background: #fff3e0; color: #e65100; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; font-size: 0.95rem; border-left: 4px solid #ef6c00; }
+
+        .contact-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        
+        .contact-card { background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .contact-info h3 { margin: 0 0 0.25rem; color: #333; font-size: 1.1rem; }
+        .contact-info .category { display: inline-block; background: #e3f2fd; color: #1565c0; font-size: 0.75rem; padding: 0.2rem 0.5rem; border-radius: 4px; margin-bottom: 0.5rem; font-weight: 600; text-transform: uppercase; }
+        .contact-info p { margin: 0; color: #666; font-size: 0.9rem; line-height: 1.4; }
+
+        .call-btn { background: #2e7d32; color: white; text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap; transition: background 0.2s; box-shadow: 0 2px 5px rgba(46,125,50,0.3); }
+        .call-btn:hover { background: #1b5e20; }
+        
+        @media (max-width: 600px) {
+            .contact-card { flex-direction: column; align-items: flex-start; }
+            .call-btn { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📞 Emergency Directory</h1>
+            <a href="/dashboard" class="back-btn">← Dashboard</a>
+        </header>
+
+        <div class="notice">
+            <strong>Important:</strong> If you are currently on a call with someone demanding money or threatening arrest, <strong>hang up first</strong>. Then tap the relevant number below to call for help.
+        </div>
+
+        <div class="contact-grid">
+            <!-- Jinja2 loop to render cards from Python data -->
+            {% for contact in contacts %}
+            <div class="contact-card">
+                <div class="contact-info">
+                    <span class="category">{{ contact.category }}</span>
+                    <h3>{{ contact.name }}</h3>
+                    <p>{{ contact.description }}</p>
+                </div>
+                <!-- The tel: link opens the phone dialer -->
+                <a href="tel:{{ contact.number }}" class="call-btn">
+                    📞 Call {{ contact.number }}
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+</html>
