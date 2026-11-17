@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CyberFit — Phishing Simulation</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 800px; margin: 0 auto; padding: 1.5rem 1rem; background: #f0f4f8; color: #222; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        h1 { font-size: 1.4rem; color: #1a237e; margin: 0; }
+        .progress { font-size: 0.9rem; color: #555; }
+        .progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin: 0.5rem 0 1.5rem; }
+        .progress-bar > div { height: 100%; background: linear-gradient(90deg, #1a237e, #3949ab); transition: width 0.3s; }
+
+        .email-card { background: white; border-radius: 10px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); overflow: hidden; }
+        .email-header { background: #fafafa; padding: 1.25rem 1.5rem; border-bottom: 1px solid #eee; }
+        .email-row { display: flex; margin-bottom: 0.5rem; font-size: 0.9rem; }
+        .email-row:last-child { margin-bottom: 0; }
+        .email-label { color: #888; width: 70px; flex-shrink: 0; font-weight: 500; }
+        .email-value { color: #222; flex: 1; word-break: break-all; }
+        .email-value.from { font-weight: 600; }
+        .email-subject { font-size: 1.05rem; font-weight: 600; padding: 0.75rem 1.5rem; background: white; border-bottom: 1px solid #eee; }
+        .email-body { padding: 1.5rem; font-family: 'Courier New', monospace; font-size: 0.88rem; line-height: 1.6; white-space: pre-wrap; color: #333; min-height: 200px; }
+
+        .actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+        .actions button { flex: 1; padding: 0.9rem; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: transform 0.1s, box-shadow 0.1s; color: white; }
+        .actions button:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-safe { background: #2e7d32; }
+        .btn-suspicious { background: #ef6c00; }
+        .btn-scam { background: #c62828; }
+        .actions button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .result-card { background: white; border-radius: 10px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid #eee; }
+        .result-header h3 { margin: 0; font-size: 1rem; color: #333; }
+        .verdict { padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; }
+        .verdict.correct { background: #e8f5e9; color: #2e7d32; }
+        .verdict.wrong { background: #ffebee; color: #c62828; }
+        .flag-list { margin: 0.75rem 0; padding-left: 1.25rem; }
+        .flag-list li { margin-bottom: 0.4rem; color: #555; font-size: 0.9rem; }
+        .explanation { background: #f5f7fa; padding: 1rem; border-radius: 6px; font-size: 0.9rem; color: #333; margin-top: 0.75rem; line-height: 1.5; }
+
+        .final-score { background: linear-gradient(135deg, #1a237e, #3949ab); color: white; padding: 2rem; border-radius: 12px; text-align: center; margin-bottom: 1.5rem; }
+        .final-score .num { font-size: 3rem; font-weight: 700; line-height: 1; }
+        .final-score .label { font-size: 1rem; opacity: 0.9; margin-top: 0.5rem; }
+        .final-score .msg { margin-top: 1rem; font-size: 0.95rem; opacity: 0.95; }
+
+        .retry-btn { display: inline-block; padding: 0.75rem 1.5rem; background: #1a237e; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 1rem; }
+
+        .loading { text-align: center; padding: 3rem; color: #888; }
+        .error { background: #ffebee; color: #c62828; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🎣 Phishing Simulation</h1>
+        <span class="progress" id="progress-text">Loading...</span>
+    </header>
+
+    <div id="progress-bar-container" style="display: none;">
+        <div class="progress-bar"><div id="progress-fill" style="width: 0%"></div></div>
+    </div>
+
+    <div id="app"></div>
+
+    <script>
+        const TOKEN_KEY = 'cyberfit_token';
+        const token = localStorage.getItem(TOKEN_KEY);
+
+        let questions = [];
+        let currentIndex = 0;
+        let answers = [];
+
+        const app = document.getElementById('app');
+        const progressText = document.getElementById('progress-text');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const progressFill = document.getElementById('progress-fill');
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[c]));
+        }
+
+        async function init() {
+            if (!token) {
+                app.innerHTML = '<div class="error">Not logged in. Please open <a href="/test">/test</a> and register/login first.</div>';
+                progressText.textContent = '';
+                return;
+            }
+            try {
+                const res = await fetch('/api/phishing/questions', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    app.innerHTML = '<div class="error">' + escapeHtml(data.error || 'Failed to load') + '</div>';
+                    return;
+                }
+                questions = data.questions;
+                progressBarContainer.style.display = 'block';
+                renderQuestion();
+            } catch (err) {
+                app.innerHTML = '<div class="error">Network error: ' + escapeHtml(err.message) + '</div>';
+            }
+        }
+
+        function renderQuestion() {
+            const q = questions[currentIndex];
+            progressText.textContent = 'Question ' + (currentIndex + 1) + ' of ' + questions.length;
+            progressFill.style.width = ((currentIndex) / questions.length * 100) + '%';
+
+            app.innerHTML = `
+                <div class="email-card">
+                    <div class="email-header">
+                        <div class="email-row">
+                            <div class="email-label">From:</div>
+                            <div class="email-value from">${escapeHtml(q.sender_name)} &lt;${escapeHtml(q.sender_email)}&gt;</div>
+                        </div>
+                        <div class="email-row">
+                            <div class="email-label">To:</div>
+                            <div class="email-value">you@example.com</div>
+                        </div>
+                    </div>
+                    <div class="email-subject">${escapeHtml(q.subject)}</div>
+                    <div class="email-body">${escapeHtml(q.body)}</div>
+                </div>
+                <div class="actions">
+                    <button class="btn-safe" onclick="choose('safe')">✓ Safe</button>
+                    <button class="btn-suspicious" onclick="choose('suspicious')">⚠ Suspicious</button>
+                    <button class="btn-scam" onclick="choose('scam')">✗ Scam</button>
+                </div>
+            `;
+        }
+
+        function choose(choice) {
+            answers.push({ id: questions[currentIndex].id, choice });
+            currentIndex++;
+            if (currentIndex < questions.length) {
+                renderQuestion();
+            } else {
+                submit();
+            }
+        }
+
+        async function submit() {
+            progressFill.style.width = '100%';
+            progressText.textContent = 'Submitting...';
+            app.innerHTML = '<div class="loading">Evaluating your answers...</div>';
+
+            try {
+                const res = await fetch('/api/phishing/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ answers })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    app.innerHTML = '<div class="error">' + escapeHtml(data.error || 'Submit failed') + '</div>';
+                    return;
+                }
+                renderResults(data);
+            } catch (err) {
+                app.innerHTML = '<div class="error">Network error: ' + escapeHtml(err.message) + '</div>';
+            }
+        }
+
+        function renderResults(data) {
+            progressText.textContent = 'Complete';
+
+            const msg = data.score >= 80 ? '🌟 Excellent! You can spot phishing like a pro.'
+                       : data.score >= 50 ? '👍 Good effort. Review the red flags below.'
+                       : '📚 Time to study the red flags carefully.';
+
+            let html = `
+                <div class="final-score">
+                    <div class="num">${data.score}%</div>
+                    <div class="label">${data.correct_count} of ${data.total} correct</div>
+                    <div class="msg">${escapeHtml(msg)}</div>
+                </div>
+            `;
+
+            data.results.forEach((r, i) => {
+                const q = questions.find(x => x.id === r.id);
+                const verdictClass = r.is_correct ? 'correct' : 'wrong';
+                const verdictText = r.is_correct ? '✓ Correct' : '✗ Incorrect';
+                const flagsHtml = r.red_flags.length
+                    ? '<strong>Red flags:</strong><ul class="flag-list">' +
+                      r.red_flags.map(f => '<li>' + escapeHtml(f) + '</li>').join('') +
+                      '</ul>'
+                    : '<em>No red flags — this was a legitimate email.</em>';
+
+                html += `
+                    <div class="result-card">
+                        <div class="result-header">
+                            <h3>${i + 1}. ${escapeHtml(q.subject)}</h3>
+                            <span class="verdict ${verdictClass}">${verdictText}</span>
+                        </div>
+                        <div><strong>Your answer:</strong> ${escapeHtml(r.user_choice)} &nbsp;·&nbsp; <strong>Correct:</strong> ${escapeHtml(r.correct_answer)}</div>
+                        <div style="margin-top: 0.75rem;">${flagsHtml}</div>
+                        <div class="explanation">${escapeHtml(r.explanation)}</div>
+                    </div>
+                `;
+            });
+
+            html += '<div style="text-align:center;"><a href="/phishing" class="retry-btn">🔄 Try Again</a></div>';
+
+            app.innerHTML = html;
+            window.scrollTo(0, 0);
+        }
+
+        init();
+    </script>
+</body>
+</html>

@@ -3,7 +3,8 @@ from flask import Flask, jsonify, request, render_template, g
 from flask_cors import CORS
 from database import init_db, get_db
 from auth import hash_password, verify_password, create_token, token_required
-
+import json
+from phishing_content import PHISHING_QUESTIONS
 app = Flask(__name__)
 CORS(app)
 
@@ -136,6 +137,75 @@ def me():
 @app.route('/test')
 def test_page():
     return render_template('auth_test.html')
+
+# ============ PHISHING MODULE (Milestone 3) ============
+
+@app.route('/api/phishing/questions')
+@token_required
+def phishing_questions():
+    """Return questions WITHOUT the answers (to prevent cheating)."""
+    sanitized = [{
+        'id': q['id'],
+        'sender_name': q['sender_name'],
+        'sender_email': q['sender_email'],
+        'subject': q['subject'],
+        'body': q['body'],
+    } for q in PHISHING_QUESTIONS]
+    return jsonify({'questions': sanitized})
+
+
+@app.route('/api/phishing/submit', methods=['POST'])
+@token_required
+def phishing_submit():
+    """Score the answers and save the attempt."""
+    data = request.get_json(silent=True) or {}
+    answers = data.get('answers', [])
+
+    if len(answers) != len(PHISHING_QUESTIONS):
+        return jsonify({'error': 'Please answer all questions before submitting'}), 400
+
+    answer_map = {a['id']: a['choice'] for a in answers if 'id' in a and 'choice' in a}
+
+    results = []
+    correct_count = 0
+    for q in PHISHING_QUESTIONS:
+        user_choice = answer_map.get(q['id'], '')
+        is_correct = user_choice == q['answer']
+        if is_correct:
+            correct_count += 1
+        results.append({
+            'id': q['id'],
+            'user_choice': user_choice,
+            'correct_answer': q['answer'],
+            'is_correct': is_correct,
+            'red_flags': q['red_flags'],
+            'explanation': q['explanation'],
+        })
+
+    score = int((correct_count / len(PHISHING_QUESTIONS)) * 100)
+
+    conn = get_db()
+    try:
+        conn.execute(
+            'INSERT INTO attempts (user_id, module_type, score, answers_json) '
+            'VALUES (?, ?, ?, ?)',
+            (g.user_id, 'phishing', score, json.dumps(answer_map))
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return jsonify({
+        'score': score,
+        'correct_count': correct_count,
+        'total': len(PHISHING_QUESTIONS),
+        'results': results,
+    })
+
+
+@app.route('/phishing')
+def phishing_page():
+    return render_template('phishing.html')
 
 
 if __name__ == '__main__':

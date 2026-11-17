@@ -49,7 +49,7 @@
     </div>
 
     <script>
-        let token = '';
+        let token = localStorage.getItem('cyberfit_token') || '';
 
         function show(data) {
             document.getElementById('output').textContent = JSON.stringify(data, null, 2);
@@ -75,7 +75,7 @@
                 email: document.getElementById('reg-email').value,
                 password: document.getElementById('reg-password').value
             });
-            if (result.data.token) { token = result.data.token; updateTokenDisplay(); }
+            if (result.data.token) { token = result.data.token; localStorage.setItem('cyberfit_token', token); updateTokenDisplay(); }
             show(result.data);
         }
 
@@ -84,7 +84,7 @@
                 email: document.getElementById('log-email').value,
                 password: document.getElementById('log-password').value
             });
-            if (result.data.token) { token = result.data.token; updateTokenDisplay(); }
+            if (result.data.token) { token = result.data.token; localStorage.setItem('cyberfit_token', token); updateTokenDisplay(); }
             show(result.data);
         }
 
