@@ -207,6 +207,15 @@ def phishing_submit():
 def phishing_page():
     return render_template('phishing.html')
 
+@app.route('/api/debug/attempts')
+def debug_attempts():
+    conn = get_db()
+    try:
+        rows = conn.execute('SELECT * FROM attempts ORDER BY id DESC LIMIT 5').fetchall()
+        return jsonify({'attempts': [dict(r) for r in rows]})
+    finally:
+        conn.close()
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=3000)
