@@ -7,6 +7,7 @@ import json
 from phishing_content import PHISHING_QUESTIONS
 from digital_arrest_scam import DIGITAL_ARREST_SCENARIO
 from contact_content import GOVT_CONTACTS
+from malicious_app_content import APP_QUESTIONS
 app = Flask(__name__)
 CORS(app)
 
@@ -332,6 +333,60 @@ def dashboard_page():
 @app.route('/contacts')
 def contacts_page():
     return render_template('contacts.html', contacts=GOVT_CONTACTS)
+
+# ============ MALICIOUS APP MODULE (Milestone 6) ============
+
+@app.route('/api/malicious-app/questions')
+@token_required
+def malicious_app_questions():
+    # For this specific UI, we must send the explanation data so the client 
+    # can show immediate feedback on click.
+    sanitized = [{
+        'id': q['id'], 'app_name': q['app_name'], 'developer': q['developer'],
+        'icon': q['icon'], 'description': q['description'], 'permissions': q['permissions'],
+        'answer': q['answer'], 'red_flags': q['red_flags'], 'explanation': q['explanation']
+    } for q in APP_QUESTIONS]
+    return jsonify({'questions': sanitized})
+
+
+@app.route('/api/malicious-app/submit', methods=['POST'])
+@token_required
+def malicious_app_submit():
+    data = request.get_json(silent=True) or {}
+    answers = data.get('answers', [])
+    
+    answer_map = {a['id']: a['choice'] for a in answers if 'id' in a and 'choice' in a}
+    results = []
+    correct_count = 0
+
+    for q in APP_QUESTIONS:
+        user_choice = answer_map.get(q['id'], '')
+        is_correct = user_choice == q['answer']
+        if is_correct: correct_count += 1
+        
+        results.append({
+            'id': q['id'], 'user_choice': user_choice, 'correct_answer': q['answer'],
+            'is_correct': is_correct, 'explanation': q['explanation']
+        })
+
+    score = int((correct_count / len(APP_QUESTIONS)) * 100)
+
+    conn = get_db()
+    try:
+        conn.execute(
+            'INSERT INTO attempts (user_id, module_type, score, answers_json) VALUES (?, ?, ?, ?)',
+            (g.user_id, 'malicious_app', score, json.dumps(answer_map))
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return jsonify({'score': score, 'results': results})
+
+
+@app.route('/malicious-app')
+def malicious_app_page():
+    return render_template('malicious_app.html')
 
 
 if __name__ == '__main__':

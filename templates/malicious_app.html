@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CyberFit — Malicious App Quiz</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #f0f4f8; margin: 0; padding: 2rem 1rem; color: #222; }
+        .container { max-width: 600px; margin: 0 auto; }
+        
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        h1 { color: #1a237e; margin: 0; font-size: 1.4rem; }
+        .progress { font-size: 0.9rem; color: #555; }
+        .progress-bar { height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; margin-bottom: 1.5rem; }
+        .progress-bar > div { height: 100%; background: linear-gradient(90deg, #1a237e, #3949ab); transition: width 0.3s; }
+
+        /* App Store Style Card */
+        .app-card { background: white; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .app-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; border-bottom: 1px solid #eee; padding-bottom: 1rem; }
+        .app-icon { font-size: 3rem; background: #f0f0f0; width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; border-radius: 16px; }
+        .app-info h2 { margin: 0 0 0.25rem; font-size: 1.2rem; color: #111; }
+        .app-info p { margin: 0; font-size: 0.85rem; color: #666; }
+        
+        .app-desc { font-size: 0.95rem; color: #333; margin-bottom: 1.5rem; font-style: italic; }
+        
+        .permissions-box { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; }
+        .permissions-box h3 { margin: 0 0 0.75rem; font-size: 0.9rem; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+        .permissions-box ul { margin: 0; padding-left: 1.5rem; color: #333; font-size: 0.95rem; line-height: 1.5; }
+
+        .actions { display: flex; gap: 1rem; }
+        .actions button { flex: 1; padding: 1rem; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
+        .actions button:hover { transform: translateY(-1px); }
+        .btn-safe { background: #2e7d32; color: white; }
+        .btn-malicious { background: #c62828; color: white; }
+
+        /* Feedback */
+        .feedback-area { margin-top: 1rem; padding: 1.25rem; background: #fff; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); border-left: 4px solid #ff9800; animation: slideIn 0.3s; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .feedback-text { font-size: 0.95rem; line-height: 1.5; margin-bottom: 1rem; }
+        .continue-btn { background: #1a237e; color: white; border: none; padding: 0.75rem; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; font-size: 1rem; }
+
+        /* Results */
+        .result-card { background: white; border-radius: 10px; padding: 1.25rem; margin-bottom: 1rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 4px solid #ccc; }
+        .result-card.correct { border-left-color: #2e7d32; }
+        .result-card.wrong { border-left-color: #c62828; }
+        .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
+        .result-header h3 { margin: 0; font-size: 1.05rem; }
+        .verdict { font-size: 0.8rem; padding: 0.2rem 0.5rem; border-radius: 4px; font-weight: bold; }
+        .verdict.correct { background: #e8f5e9; color: #2e7d32; }
+        .verdict.wrong { background: #ffebee; color: #c62828; }
+        .explanation { font-size: 0.9rem; color: #444; background: #f5f7fa; padding: 0.75rem; border-radius: 6px; margin-top: 0.5rem; line-height: 1.4; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📱 Malicious App Check</h1>
+            <span class="progress" id="progress-text">Loading...</span>
+        </header>
+        <div class="progress-bar"><div id="progress-fill" style="width: 0%"></div></div>
+        
+        <div id="app"></div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('cyberfit_token');
+        const appDiv = document.getElementById('app');
+        const progressText = document.getElementById('progress-text');
+        const progressFill = document.getElementById('progress-fill');
+
+        let questions = [];
+        let currentIndex = 0;
+        let answers = [];
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        async function init() {
+            if (!token) { appDiv.innerHTML = '<p>Please <a href="/test">login</a> first.</p>'; return; }
+            try {
+                const res = await fetch('/api/malicious-app/questions', { headers: { 'Authorization': 'Bearer ' + token } });
+                const data = await res.json();
+                questions = data.questions;
+                renderQuestion();
+            } catch (e) { appDiv.innerHTML = '<p>Error loading.</p>'; }
+        }
+
+        function renderQuestion() {
+            const q = questions[currentIndex];
+            progressText.textContent = `${currentIndex + 1} of ${questions.length}`;
+            progressFill.style.width = `${(currentIndex / questions.length) * 100}%`;
+
+            const permsHtml = q.permissions.map(p => `<li>${escapeHtml(p)}</li>`).join('');
+
+            appDiv.innerHTML = `
+                <div class="app-card">
+                    <div class="app-header">
+                        <div class="app-icon">${q.icon}</div>
+                        <div class="app-info">
+                            <h2>${escapeHtml(q.app_name)}</h2>
+                            <p>${escapeHtml(q.developer)}</p>
+                        </div>
+                    </div>
+                    <div class="app-desc">"${escapeHtml(q.description)}"</div>
+                    <div class="permissions-box">
+                        <h3>Requested Permissions:</h3>
+                        <ul>${permsHtml}</ul>
+                    </div>
+                    <div class="actions" id="choices-area">
+                        <button class="btn-safe" onclick="choose('safe')">✓ Safe to Install</button>
+                        <button class="btn-malicious" onclick="choose('malicious')">✗ Malicious / Dangerous</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function choose(choice) {
+            const q = questions[currentIndex];
+            const isCorrect = choice === q.answer;
+            answers.push({ id: q.id, choice });
+
+            const choicesArea = document.getElementById('choices-area');
+            let flagsHtml = q.red_flags.length 
+                ? `<strong>Red flags:</strong><ul style="margin:0.5rem 0; padding-left:1.2rem;">` + q.red_flags.map(f => `<li>${escapeHtml(f)}</li>`).join('') + `</ul>`
+                : `<em>No red flags. This app is safe.</em>`;
+
+            const feedbackHtml = `
+                <div class="feedback-area" style="border-left-color: ${isCorrect ? '#2e7d32' : '#c62828'};">
+                    <div class="feedback-text">
+                        <strong>${isCorrect ? '✅ Correct!' : '❌ Incorrect.'}</strong> This app is <strong>${q.answer.toUpperCase()}</strong>.<br><br>
+                        ${flagsHtml}
+                        <p style="margin-top:0.5rem;">${escapeHtml(q.explanation)}</p>
+                    </div>
+                    <button class="continue-btn" onclick="nextStep()">Continue</button>
+                </div>
+            `;
+            choicesArea.innerHTML = feedbackHtml;
+        }
+
+        function nextStep() {
+            currentIndex++;
+            if (currentIndex < questions.length) {
+                renderQuestion();
+            } else {
+                submit();
+            }
+        }
+
+        async function submit() {
+            progressText.textContent = "Submitting...";
+            progressFill.style.width = "100%";
+            
+            const res = await fetch('/api/malicious-app/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                body: JSON.stringify({ answers })
+            });
+            const data = await res.json();
+            renderResults(data);
+        }
+
+        function renderResults(data) {
+            progressText.textContent = "Complete";
+            let html = `
+                <div style="text-align:center; margin-bottom: 2rem;">
+                    <h2 style="color:#1a237e; margin:0;">Quiz Complete!</h2>
+                    <p style="font-size:1.2rem; font-weight:bold;">Score: ${data.score}%</p>
+                    <a href="/dashboard" style="color:#1a237e;">← Back to Dashboard</a>
+                </div>
+            `;
+
+            data.results.forEach((r, i) => {
+                const q = questions[i];
+                html += `
+                    <div class="result-card ${r.is_correct ? 'correct' : 'wrong'}">
+                        <div class="result-header">
+                            <h3>${q.icon} ${escapeHtml(q.app_name)}</h3>
+                            <span class="verdict ${r.is_correct ? 'correct' : 'wrong'}">${r.is_correct ? 'Correct' : 'Wrong'}</span>
+                        </div>
+                        <div style="font-size:0.9rem;">Your answer: <strong>${r.user_choice}</strong> · Correct: <strong>${r.correct_answer}</strong></div>
+                        <div class="explanation">${escapeHtml(r.explanation)}</div>
+                    </div>
+                `;
+            });
+            appDiv.innerHTML = html;
+            window.scrollTo(0,0);
+        }
+
+        init();
+    </script>
+</body>
+</html>
