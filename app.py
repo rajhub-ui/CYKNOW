@@ -291,6 +291,7 @@ def api_dashboard():
 
         return jsonify({
             'user_name': user['name'] if user else 'User',
+            'difficulty_level': user['difficulty_level'] if user else 'unassessed', # ADD THIS
             'overall_score': overall_score,
             'modules_completed': len(module_scores),
             'attempts': attempts_list
@@ -395,6 +396,50 @@ def malicious_app_page():
 def learning_page():
     return render_template('learning.html', modules=LEARNING_MODULES)
 
+# ============ SURVEY & ADAPTIVE LEARNING ============
+
+@app.route('/survey')
+def survey_page():
+    return render_template('survey.html')
+
+@app.route('/api/survey/submit', methods=['POST'])
+@token_required
+def survey_submit():
+    data = request.get_json(silent=True) or {}
+    level = data.get('level', 'beginner')
+    
+    conn = get_db()
+    try:
+        conn.execute(
+            'UPDATE users SET difficulty_level = ? WHERE id = ?',
+            (level, g.user_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+        
+    return jsonify({'status': 'ok', 'level': level})
+
+# KEEP THIS NEW VERSION
+@app.route('/learning')
+@token_required
+def learning_page():
+    conn = get_db()
+    try:
+        user = conn.execute('SELECT difficulty_level FROM users WHERE id = ?', (g.user_id,)).fetchone()
+        level = user['difficulty_level'] if user and user['difficulty_level'] != 'unassessed' else 'beginner'
+    finally:
+        conn.close()
+
+    # Get the user's chosen language (default to 'en')
+    lang = session.get('lang', 'en')
+
+    tailored_modules = {}
+    for module_key, tiers in LEARNING_MODULES.items():
+        # Get the content for their specific tier and language
+        tailored_modules[module_key] = tiers.get(level, tiers['beginner'])[lang]
+
+    return render_template('learning.html', modules=tailored_modules, user_level=level)
 
 if __name__ == '__main__':
     app.run(debug=True, port=3000)

@@ -25,9 +25,15 @@
     </style>
 </head>
 <body>
+    <body>
     <div class="container">
         <header>
-            <h1>📚 Learning Center</h1>
+            <div>
+                <h1>📚 Learning Center</h1>
+                <span style="font-size: 0.9rem; background: #e3f2fd; color: #1565c0; padding: 0.3rem 0.6rem; border-radius: 4px; font-weight: bold; text-transform: uppercase;">
+                    Path: {{ user_level }}
+                </span>
+            </div>
             <a href="/dashboard" class="back-btn">← Back to Dashboard</a>
         </header>
 
@@ -43,7 +49,7 @@
                 {% endfor %}
             </ul>
 
-            <!-- Link to the corresponding test based on the key -->
+            <!-- Link to the corresponding test -->
             {% if key == 'phishing' %}
                 <a href="/phishing" class="test-btn">Take Phishing Test →</a>
             {% elif key == 'digital_arrest' %}
