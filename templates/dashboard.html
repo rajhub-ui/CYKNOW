@@ -3,113 +3,119 @@
 <head>
     <meta charset="utf-8">
     <title>CyberFit — Dashboard</title>
-    <!-- Chart.js via CDN (0 MB install, instant) -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * { box-sizing: border-box; }
         body { font-family: system-ui, sans-serif; background: #f0f4f8; margin: 0; padding: 2rem 1rem; color: #222; }
         .container { max-width: 900px; margin: 0 auto; }
-        
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
         h1 { color: #1a237e; margin: 0; font-size: 1.8rem; }
         .logout-btn { background: #c62828; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
-
-        /* Top Score Card */
         .score-hero { background: linear-gradient(135deg, #1a237e, #3949ab); color: white; padding: 2rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(26,35,126,0.2); }
         .score-hero h2 { margin: 0 0 0.5rem; font-size: 1.2rem; font-weight: 500; opacity: 0.9; }
         .score-hero .num { font-size: 3.5rem; font-weight: 800; line-height: 1; }
         .score-hero .sub { font-size: 1rem; opacity: 0.8; margin-top: 0.5rem; }
-
-        /* Grid Layout */
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
         @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-        
         .card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .card h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; margin-bottom: 1rem; }
-
-        /* Module Links */
         .module-link { display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8f9fa; border-radius: 8px; text-decoration: none; color: #333; font-weight: 600; margin-bottom: 0.75rem; transition: background 0.2s; }
         .module-link:hover { background: #e3f2fd; }
         .module-link .arrow { color: #1a237e; font-size: 1.2rem; }
-
-        /* Report Form */
         select, textarea { width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; font-size: 0.95rem; margin-bottom: 1rem; }
         textarea { resize: vertical; min-height: 100px; }
         .btn-primary { background: #1a237e; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; }
-        .btn-primary:hover { background: #0d1657; }
-        
         .report-output { background: #263238; color: #aed581; padding: 1rem; border-radius: 6px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; margin-top: 1rem; display: none; }
     </style>
 </head>
 <body>
+    <!-- Language Popup Modal -->
+    {% if show_lang_popup %}
+    <div id="lang-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+        <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
+            <h2 style="color: #1a237e; margin-top: 0;">🌐 {{ t.lang_popup_title }}</h2>
+            <p style="color: #555; margin-bottom: 1.5rem;">{{ t.lang_popup_desc }}</p>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a href="/set_language/en" style="background: #1a237e; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: bold;">English</a>
+                <a href="/set_language/hi" style="background: #c62828; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: bold;">हिंदी</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="container">
+        <!-- Language Toggle -->
+        <div style="text-align: right; margin-bottom: 1rem;">
+            <span style="font-size: 0.9rem; color: #666;">Language: </span>
+            <a href="/set_language/en" style="font-weight: bold; color: {% if current_lang == 'en' %}#1a237e{% else %}#888{% endif %}; text-decoration: none;">English</a> | 
+            <a href="/set_language/hi" style="font-weight: bold; color: {% if current_lang == 'hi' %}#1a237e{% else %}#888{% endif %}; text-decoration: none;">हिंदी</a>
+        </div>
+
         <header>
-            <h1>🛡️ CyberFit Dashboard</h1>
-            <a href="/test" class="logout-btn" onclick="localStorage.removeItem('cyberfit_token');">Log Out</a>
+            <h1>🛡️ {{ t.dashboard_title }}</h1>
+            <div style="display: flex; gap: 1rem;">
+                <a href="/admin" style="color: #1a237e; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding-top: 0.5rem;">{{ t.admin_panel }}</a>
+                <a href="/test" class="logout-btn" onclick="localStorage.removeItem('cyberfit_token');">{{ t.logout }}</a>
+            </div>
         </header>
 
         <div class="score-hero">
             <div>
-                <h2>Welcome back, <span id="user-name">...</span></h2>
-                <div class="sub">Your overall cyber-resilience score</div>
+                <h2>{{ t.welcome }}, <span id="user-name">...</span></h2>
+                <div class="sub">{{ t.overall_score }}</div>
             </div>
             <div style="text-align: right;">
                 <div class="num" id="overall-score">0</div>
-                <div class="sub"><span id="modules-completed">0</span> modules completed</div>
+                <div class="sub"><span id="modules-completed">0</span> {{ t.modules_completed }}</div>
             </div>
         </div>
 
         <div class="grid">
-            <!-- Chart -->
             <div class="card">
-                <h3>📈 Score History</h3>
+                <h3>📈 {{ t.score_history }}</h3>
                 <canvas id="scoreChart" height="200"></canvas>
             </div>
 
-            <!-- Modules -->
-                        <!-- Modules -->
             <div class="card">
-                <h3>🎯 Training Center</h3>
+                <h3>🎯 {{ t.training_center }}</h3>
                 
-                <p style="font-size: 0.85rem; color: #666; margin-top: 0;"><strong>Step 1:</strong> Learn how the scams work.</p>
+                <p style="font-size: 0.85rem; color: #666; margin-top: 0;"><strong>{{ t.step_1 }}</strong></p>
                 <a href="/learning" class="module-link" style="background: #e8eaf6; color: #1a237e; border: 1px solid #c5cae9;">
-                    <span>📚 Read the Security Guides</span>
+                    <span>📚 {{ t.read_guides }}</span>
                     <span class="arrow">→</span>
                 </a>
 
-                <p style="font-size: 0.85rem; color: #666; margin-top: 1rem;"><strong>Step 2:</strong> Test your reflexes.</p>
+                <p style="font-size: 0.85rem; color: #666; margin-top: 1rem;"><strong>{{ t.step_2 }}</strong></p>
                 <a href="/phishing" class="module-link">
-                    <span>🎣 Phishing Simulation</span>
+                    <span>🎣 {{ t.phishing_test }}</span>
                     <span class="arrow">→</span>
                 </a>
                 <a href="/digital-arrest" class="module-link">
-                    <span>🚨 Digital Arrest Scenario</span>
+                    <span>🚨 {{ t.arrest_test }}</span>
                     <span class="arrow">→</span>
                 </a>
                 <a href="/malicious-app" class="module-link">
-                    <span>📱 Malicious App Quiz</span>
+                    <span>📱 {{ t.app_test }}</span>
                     <span class="arrow">→</span>
                 </a>
                 
                 <a href="/contacts" class="module-link" style="background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; margin-top: 1.5rem;">
-                    <span>📞 Emergency Directory (1930)</span>
+                    <span>📞 {{ t.emergency }}</span>
                     <span class="arrow">→</span>
                 </a>
             </div>
         </div>
 
-        <!-- Report Generator -->
         <div class="card">
-            <h3>📝 Quick Report Generator (1930 Mock)</h3>
-            <p style="font-size: 0.9rem; color: #666; margin-top: 0;">Generate a pre-filled complaint format to copy-paste into the official portal.</p>
+            <h3>📝 {{ t.report_gen }}</h3>
             <select id="scam-type">
                 <option value="Digital Arrest Scam">Digital Arrest Scam</option>
                 <option value="Phishing / Fake Link">Phishing / Fake Link</option>
                 <option value="Malicious App / APK">Malicious App / APK</option>
                 <option value="UPI / OTP Fraud">UPI / OTP Fraud</option>
             </select>
-            <textarea id="scam-desc" placeholder="Briefly describe what happened (e.g., 'Received a WhatsApp call from a fake CBI officer demanding money...')"></textarea>
-            <button class="btn-primary" onclick="generateReport()">Generate Report Template</button>
+            <textarea id="scam-desc" placeholder="{{ t.report_placeholder }}"></textarea>
+            <button class="btn-primary" onclick="generateReport()">{{ t.generate_report_btn }}</button>
             <pre class="report-output" id="report-output"></pre>
         </div>
     </div>
@@ -134,7 +140,6 @@
                     return;
                 }
 
-                // Set text
                 document.getElementById('user-name').textContent = data.user_name;
                 document.getElementById('overall-score').textContent = data.overall_score;
                 document.getElementById('modules-completed').textContent = data.modules_completed;
@@ -147,8 +152,6 @@
 
         function renderChart(attempts) {
             const ctx = document.getElementById('scoreChart').getContext('2d');
-            
-            // Group attempts by date/label
             const labels = attempts.map(a => {
                 const date = new Date(a.attempted_at);
                 const mod = a.module_type === 'phishing' ? 'Phishing' : 'Arrest';
@@ -163,40 +166,20 @@
                 type: 'bar',
                 data: {
                     labels: labels,
-                    datasets: [{
-                        label: 'Score (%)',
-                        data: scores,
-                        backgroundColor: colors,
-                        borderRadius: 6
-                    }]
+                    datasets: [{ label: 'Score (%)', data: scores, backgroundColor: colors, borderRadius: 6 }]
                 },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: { beginAtZero: true, max: 100 }
-                    },
-                    plugins: {
-                        legend: { display: false }
-                    }
-                }
+                options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
             });
         }
 
         async function generateReport() {
             const type = document.getElementById('scam-type').value;
             const desc = document.getElementById('scam-desc').value;
-
-            if (!desc.trim()) {
-                alert('Please enter a brief description.');
-                return;
-            }
+            if (!desc.trim()) { alert('Please enter a brief description.'); return; }
 
             const res = await fetch('/api/report-1930', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token
-                },
+                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                 body: JSON.stringify({ scam_type: type, description: desc })
             });
             const data = await res.json();

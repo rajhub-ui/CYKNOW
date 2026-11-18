@@ -69,23 +69,37 @@
             return { status: res.status, data: await res.json() };
         }
 
-        async function register() {
+                async function register() {
             const result = await post('/api/auth/register', {
                 name: document.getElementById('reg-name').value,
                 email: document.getElementById('reg-email').value,
                 password: document.getElementById('reg-password').value
             });
-            if (result.data.token) { token = result.data.token; localStorage.setItem('cyberfit_token', token); updateTokenDisplay(); }
-            show(result.data);
+            if (result.data.token) { 
+                token = result.data.token; 
+                localStorage.setItem('cyberfit_token', token); 
+                updateTokenDisplay(); 
+                // ADD THIS LINE:
+                window.location.href = '/dashboard'; 
+            } else {
+                show(result.data);
+            }
         }
 
-        async function login() {
+                async function login() {
             const result = await post('/api/auth/login', {
                 email: document.getElementById('log-email').value,
                 password: document.getElementById('log-password').value
             });
-            if (result.data.token) { token = result.data.token; localStorage.setItem('cyberfit_token', token); updateTokenDisplay(); }
-            show(result.data);
+            if (result.data.token) { 
+                token = result.data.token; 
+                localStorage.setItem('cyberfit_token', token); 
+                updateTokenDisplay(); 
+                // ADD THIS LINE:
+                window.location.href = '/dashboard'; 
+            } else {
+                show(result.data);
+            }
         }
 
         async function getMe() {

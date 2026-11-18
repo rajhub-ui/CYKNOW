@@ -50,12 +50,12 @@
             </ul>
 
             <!-- Link to the corresponding test -->
-            {% if key == 'phishing' %}
-                <a href="/phishing" class="test-btn">Take Phishing Test →</a>
+                        {% if key == 'phishing' %}
+                <a href="/phishing" class="test-btn" style="margin-top: 1rem;">{{ t.take_test }} →</a>
             {% elif key == 'digital_arrest' %}
-                <a href="/digital-arrest" class="test-btn">Take Digital Arrest Test →</a>
+                <a href="/digital-arrest" class="test-btn" style="margin-top: 1rem;">{{ t.take_test }} →</a>
             {% elif key == 'malicious_app' %}
-                <a href="/malicious-app" class="test-btn">Take Malicious App Test →</a>
+                <a href="/malicious-app" class="test-btn" style="margin-top: 1rem;">{{ t.take_test }} →</a>
             {% endif %}
         </div>
         {% endfor %}
