@@ -24,8 +24,9 @@
         .point-number { font-size: 0.9rem; color: #888; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; margin-bottom: 1rem; }
         .point-text { font-size: 1.3rem; line-height: 1.6; color: #333; font-weight: 500; }
         
-        .image-placeholder { margin: 1.5rem 0; display: none; }
-        .image-placeholder img { max-width: 100%; border-radius: 8px; }
+        /* Image Styling */
+        .intro-image { margin-top: 1.5rem; }
+        .intro-image img { width: 100%; max-height: 220px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #ddd; }
 
         /* Footer Controls */
         .card-footer { padding: 1.5rem; border-top: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fafafa; }
@@ -46,14 +47,12 @@
 </head>
 <body>
 
-    <!-- We pass the points from Python to JS as a JSON array -->
+    <!-- We pass data from Python to JS safely using tojson -->
     <script>
         const points = {{ module.points | tojson }};
-        const moduleTitle = {{ module.title | tojson }};
         const moduleIntro = {{ module.intro | tojson }};
         const moduleKey = {{ module_key | tojson }};
-        const listenText = {{ t.listen_btn | tojson }};
-        const moduleImage={{ module.image | tojson }};
+        const moduleImage = {{ module.image | default('') | tojson }}; 
     </script>
 
     <div class="card-container">
@@ -67,12 +66,12 @@
         </div>
 
         <div class="card-body" id="card-body">
-            <!-- Content injected by JS -->
+            <!-- Content will be injected by JavaScript -->
         </div>
 
         <div class="card-footer">
-            <button class="audio-btn" id="audio-btn" onclick="speakCurrentPoint()">
-                🔊 <span id="audio-text">{{ t.listen_btn }}</span>
+            <button class="audio-btn" onclick="speakCurrentPoint()">
+                🔊 <span>{{ t.listen_btn }}</span>
             </button>
             
             <div class="nav-btns">
@@ -92,26 +91,22 @@
         const prevBtn = document.getElementById('prev-btn');
         const nextBtn = document.getElementById('next-btn');
         const testBtn = document.getElementById('test-btn');
-        const audioBtn = document.getElementById('audio-btn');
 
         function renderStep() {
-            // Update Progress Bar
+            // 1. Update Progress Bar
             progressBar.style.width = `${((currentIndex + 1) / totalSteps) * 100}%`;
-
-            // Update Buttons
-            prevBtn.style.visibility = currentIndex === -1 ? 'hidden' : 'visible';
             
+            // 2. Update Button Visibility
+            prevBtn.style.visibility = currentIndex === -1 ? 'hidden' : 'visible';
             if (currentIndex === points.length - 1) {
-                // Last point
                 nextBtn.style.display = 'none';
                 testBtn.style.display = 'inline-block';
             } else {
-                // Intro or middle points
                 nextBtn.style.display = 'inline-block';
                 testBtn.style.display = 'none';
             }
 
-            // Render Content
+            // 3. Render Content with Animation
             bodyDiv.innerHTML = '';
             bodyDiv.classList.remove('fade-in');
             void bodyDiv.offsetWidth; // Trigger reflow for animation
@@ -119,14 +114,11 @@
 
             if (currentIndex === -1) {
                 // Intro Screen
+                let imageHtml = '';
+                if (moduleImage) {
+                    imageHtml = `<div class="intro-image"><img src="/static/images/${moduleImage}" onerror="this.style.display='none'"></div>`;
+                }
                 
-                            if (currentIndex === -1) {
-                // Intro Screen
-                // We check if moduleImage exists before showing the img tag
-                let imageHtml = moduleImage 
-                    ? `<div style="margin-top: 1.5rem;"><img src="/static/images/${moduleImage}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);" onerror="this.style.display='none'"></div>` 
-                    : '';
-
                 bodyDiv.innerHTML = `
                     <div class="point-number">Introduction</div>
                     <div class="point-text">${moduleIntro}</div>
@@ -142,17 +134,11 @@
         }
 
         function nextPoint() {
-            if (currentIndex < points.length - 1) {
-                currentIndex++;
-                renderStep();
-            }
+            if (currentIndex < points.length - 1) { currentIndex++; renderStep(); }
         }
 
         function prevPoint() {
-            if (currentIndex > -1) {
-                currentIndex--;
-                renderStep();
-            }
+            if (currentIndex > -1) { currentIndex--; renderStep(); }
         }
 
         // --- Professional Text-to-Speech Logic ---
@@ -185,7 +171,7 @@
             }
         }
 
-        // Initialize
+        // Initialize the first screen
         renderStep();
     </script>
 </body>
