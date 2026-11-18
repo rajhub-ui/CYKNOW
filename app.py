@@ -253,6 +253,29 @@ def learning_page():
 
     return render_template('learning.html', modules=tailored_modules, user_level=level)
 
+@app.route('/learn/<module_key>')
+def learn_module(module_key):
+    user_id = session.get('user_id')
+    if not user_id:
+        return redirect('/test')
+
+    conn = get_db()
+    try:
+        user = conn.execute('SELECT difficulty_level FROM users WHERE id = ?', (user_id,)).fetchone()
+        level = user['difficulty_level'] if user and user['difficulty_level'] != 'unassessed' else 'beginner'
+    finally:
+        conn.close()
+
+    lang = session.get('lang', 'en')
+    
+    if module_key not in LEARNING_MODULES:
+        return redirect('/learning')
+
+    # Get the specific module data
+    module_data = LEARNING_MODULES[module_key].get(level, LEARNING_MODULES[module_key]['beginner'])[lang]
+
+    return render_template('learn_module.html', module=module_data, module_key=module_key, user_level=level)
+
 
 # ============ API ENDPOINTS FOR MODULES ============
 

@@ -7,36 +7,19 @@
         * { box-sizing: border-box; }
         body { font-family: system-ui, sans-serif; background: #f0f4f8; margin: 0; padding: 2rem 1rem; color: #222; }
         .container { max-width: 800px; margin: 0 auto; }
-        
         header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
         h1 { color: #1a237e; margin: 0; font-size: 1.8rem; }
         .back-btn { background: #1a237e; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
-
-        .module-card { background: white; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-        .module-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
-        .module-card h2 { color: #1a237e; margin-top: 0; font-size: 1.4rem; margin-bottom: 0.5rem; }
         
-        .intro { font-size: 1rem; color: #444; font-style: italic; margin-bottom: 1.5rem; background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #3949ab; }
-
-        /* Real-World Image */
-        .module-image { text-align: center; margin: 1.5rem 0; }
-        .module-image img { max-width: 100%; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border: 1px solid #ddd; }
-
-        /* Accordion Styles (Progressive Disclosure) */
-        details { background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; margin-bottom: 0.75rem; overflow: hidden; transition: all 0.3s; }
-        details[open] { background: #f8f9fa; border-color: #3949ab; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        summary { padding: 1rem; font-weight: 600; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; color: #333; user-select: none; }
-        summary::-webkit-details-marker { display: none; }
-        summary::after { content: '▼'; font-size: 0.8rem; color: #1a237e; transition: transform 0.3s; }
-        details[open] summary::after { transform: rotate(180deg); }
-        .detail-content { padding: 0 1rem 1rem; color: #444; line-height: 1.6; font-size: 0.95rem; border-top: 1px solid #eee; margin-top: 0.5rem; padding-top: 0.75rem; }
+        .hub-grid { display: grid; grid-template-columns: 1fr; gap: 1.5rem; }
+        @media(min-width: 768px) { .hub-grid { grid-template-columns: 1fr 1fr 1fr; } }
         
-        /* Audio Button */
-        .audio-btn { background: #e3f2fd; color: #1565c0; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-bottom: 1rem; display: inline-flex; align-items: center; gap: 0.5rem; transition: background 0.2s; }
-        .audio-btn:hover { background: #bbdefb; }
-
-        .test-btn { display: inline-block; background: #1a237e; color: white; text-decoration: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-weight: 600; transition: background 0.2s; margin-top: 1rem; }
-        .test-btn:hover { background: #0d1657; }
+        .hub-card { background: white; border-radius: 12px; padding: 2rem; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); text-decoration: none; color: #222; transition: transform 0.2s, box-shadow 0.2s; display: flex; flex-direction: column; justify-content: space-between; border-top: 6px solid #3949ab; }
+        .hub-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .hub-card .icon { font-size: 3rem; margin-bottom: 1rem; }
+        .hub-card h3 { margin: 0 0 1rem; color: #1a237e; }
+        .hub-card p { color: #666; font-size: 0.9rem; line-height: 1.5; margin-bottom: 1.5rem; }
+        .start-btn { background: #e3f2fd; color: #1565c0; padding: 0.75rem; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -51,75 +34,37 @@
             <a href="/dashboard" class="back-btn">← {{ t.back_dash }}</a>
         </header>
 
-        <!-- Loop through the Python dictionary -->
-        {% for key, mod in modules.items() %}
-        <div class="module-card">
-            
-            <div class="module-header">
-                <h2>{{ mod.title }}</h2>
-            </div>
-
-            <!-- Text-to-Speech Button -->
-            <button class="audio-btn" onclick="speakText('{{ mod.title }}. {{ mod.intro }}')">
-                🔊 {{ t.listen_btn }}
-            </button>
-
-            <div class="intro">{{ mod.intro }}</div>
-            
-            <!-- Real-World Image -->
-            {% if mod.image %}
-            <div class="module-image">
-                <img src="{{ url_for('static', filename='images/' + mod.image) }}" 
-                     alt="Real World Example" 
-                     onerror="this.style.display='none'">
-            </div>
-            {% endif %}
-
-            <!-- Progressive Disclosure (Accordions) -->
-            {% for point in mod.points %}
-            <details>
-                <summary>Key Point {{ loop.index }}</summary>
-                <div class="detail-content">
-                    {{ point }}
+        <div class="hub-grid">
+            <!-- Phishing Card -->
+            <a href="/learn/phishing" class="hub-card" style="border-top-color: #3949ab;">
+                <div class="icon">🎣</div>
+                <div>
+                    <h3>Phishing</h3>
+                    <p>Learn how attackers use fake emails and links to steal your credentials.</p>
                 </div>
-            </details>
-            {% endfor %}
+                <div class="start-btn">Start Course →</div>
+            </a>
 
-            <!-- Link to the corresponding test -->
-            {% if key == 'phishing' %}
-                <a href="/phishing" class="test-btn">{{ t.take_test }} (Phishing) →</a>
-            {% elif key == 'digital_arrest' %}
-                <a href="/digital-arrest" class="test-btn">{{ t.take_test }} (Digital Arrest) →</a>
-            {% elif key == 'malicious_app' %}
-                <a href="/malicious-app" class="test-btn">{{ t.take_test }} (Malicious App) →</a>
-            {% endif %}
+            <!-- Digital Arrest Card -->
+            <a href="/learn/digital_arrest" class="hub-card" style="border-top-color: #c62828;">
+                <div class="icon">🚨</div>
+                <div>
+                    <h3>Digital Arrest</h3>
+                    <p>Understand the psychological tactics used by fake police officers.</p>
+                </div>
+                <div class="start-btn">Start Course →</div>
+            </a>
+
+            <!-- Malicious Apps Card -->
+            <a href="/learn/malicious_app" class="hub-card" style="border-top-color: #2e7d32;">
+                <div class="icon">📱</div>
+                <div>
+                    <h3>Malicious Apps</h3>
+                    <p>Learn how to spot fake apps and dangerous permissions.</p>
+                </div>
+                <div class="start-btn">Start Course →</div>
+            </a>
         </div>
-        {% endfor %}
     </div>
-
-    <!-- Web Speech API for Accessibility -->
-    <script>
-        function speakText(text) {
-            if ('speechSynthesis' in window) {
-                // Stop any current speech
-                window.speechSynthesis.cancel();
-                
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.rate = 0.9; // Slightly slower for better comprehension
-                
-                // Try to match the language (if Hindi is selected, look for a Hindi voice)
-                const currentLang = "{{ current_lang }}";
-                if (currentLang === 'hi') {
-                    utterance.lang = 'hi-IN';
-                } else {
-                    utterance.lang = 'en-US';
-                }
-                
-                window.speechSynthesis.speak(utterance);
-            } else {
-                alert("Your browser does not support text-to-speech.");
-            }
-        }
-    </script>
 </body>
 </html>
