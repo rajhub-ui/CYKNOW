@@ -70,9 +70,15 @@
         </div>
 
         <div class="card-footer">
+            <!-- Show Audio Button ONLY in English Mode -->
+            {% if current_lang == 'en' %}
             <button class="audio-btn" onclick="speakCurrentPoint()">
                 🔊 <span>{{ t.listen_btn }}</span>
             </button>
+            {% else %}
+            <!-- Empty spacer for Hindi mode to keep layout balanced -->
+            <div style="width: 10px;"></div>
+            {% endif %}
             
             <div class="nav-btns">
                 <button class="btn btn-prev" id="prev-btn" onclick="prevPoint()" style="visibility: hidden;">Prev</button>
@@ -141,12 +147,16 @@
             if (currentIndex > -1) { currentIndex--; renderStep(); }
         }
 
-        // --- Professional Text-to-Speech Logic ---
+        // --- English Text-to-Speech Logic ---
         let voices = [];
         function loadVoices() { voices = window.speechSynthesis.getVoices(); }
         window.speechSynthesis.onvoiceschanged = loadVoices;
 
         function speakCurrentPoint() {
+            // Safety check to ensure it only runs in English
+            const currentLang = "{{ current_lang }}";
+            if (currentLang !== 'en') return;
+
             if ('speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 
@@ -155,18 +165,19 @@
                 
                 utterance.rate = 0.9; 
                 utterance.pitch = 1; 
+                utterance.lang = 'en-US';
                 
-                const currentLang = "{{ current_lang }}";
-                const langCode = currentLang === 'hi' ? 'hi' : 'en';
                 loadVoices();
                 
-                let preferredVoice = voices.find(v => v.lang.startsWith(langCode) && v.name.includes('Natural')) ||
-                                     voices.find(v => v.lang.startsWith(langCode) && v.name.includes('Google')) ||
-                                     voices.find(v => v.lang.startsWith(langCode));
-                
-                if (preferredVoice) utterance.voice = preferredVoice;
-                utterance.lang = currentLang === 'hi' ? 'hi-IN' : 'en-US';
-                
+                // Find the most professional English voice available
+                let preferredVoice = voices.find(v => v.lang === 'en-US' && v.name.includes('Natural')) ||
+                                     voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
+                                     voices.find(v => v.lang === 'en-US');
+
+                if (preferredVoice) {
+                    utterance.voice = preferredVoice;
+                }
+
                 window.speechSynthesis.speak(utterance);
             }
         }
