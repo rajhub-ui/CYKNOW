@@ -17,7 +17,7 @@ def init_db():
     conn = get_db()
     try:
         conn.executescript('''
-                        CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL,
                 email TEXT UNIQUE NOT NULL,
@@ -55,11 +55,19 @@ def init_db():
                 FOREIGN KEY (user_id) REFERENCES users(id)
             );
         ''')
+        
+        # --- SELF-HEALING SCRIPT ---
+        # This checks if your old database is missing the new column, and adds it automatically
+        cursor = conn.execute("PRAGMA table_info(users)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'difficulty_level' not in columns:
+            conn.execute("ALTER TABLE users ADD COLUMN difficulty_level TEXT DEFAULT 'unassessed'")
+            print('✅ Upgraded existing database: Added difficulty_level column')
+
         conn.commit()
-        print('✅ Database initialized with 4 tables')
+        print('✅ Database initialized successfully')
     finally:
         conn.close()
-
 
 # Run directly to init the DB manually (useful for testing)
 if __name__ == '__main__':

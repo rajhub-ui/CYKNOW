@@ -237,9 +237,13 @@ def learning_page():
     conn = get_db()
     try:
         user = conn.execute('SELECT difficulty_level FROM users WHERE id = ?', (user_id,)).fetchone()
-        level = user['difficulty_level'] if user and user['difficulty_level'] != 'unassessed' else 'beginner'
+        level = user['difficulty_level'] if user else 'unassessed'
     finally:
         conn.close()
+
+    # If they haven't taken the survey, redirect them!
+    if level == 'unassessed':
+        return redirect('/survey')
 
     lang = session.get('lang', 'en')
 

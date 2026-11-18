@@ -135,10 +135,7 @@
                 const data = await res.json();
                 if (!res.ok) { window.location.href = '/test'; return; }
 
-                if (data.difficulty_level === 'unassessed') {
-                    window.location.href = '/survey';
-                    return;
-                }
+                
 
                 document.getElementById('user-name').textContent = data.user_name;
                 document.getElementById('overall-score').textContent = data.overall_score;
