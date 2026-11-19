@@ -43,5 +43,6 @@ Unlike traditional awareness programs that rely on reading static text, CyberFit
 4.**Run the application**
     ```bash
     python app.py
+    
 5. **Go to your browser**
     **Go to:**(http://localhost:3000)
