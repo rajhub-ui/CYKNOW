@@ -30,3 +30,18 @@ Unlike traditional awareness programs that rely on reading static text, CyberFit
    ```bash
    git clone https://github.com/rajhub-ui/CYKNOW.git
    cd CYKNOW
+2. **Create and activate a virtual environment**
+   ```bash
+   python -m venv venv
+   # On Windows:
+   venv\Scripts\activate
+   # On Mac/Linux:
+   source venv/bin/activate
+3. **Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+4.**Run the application**
+    ```bash
+    python app.py
+5. **Go to your browser**
+    **Go to:**(http://localhost:3000)
