@@ -17,13 +17,18 @@ def init_db():
     conn = get_db()
     try:
         conn.executescript('''
-            CREATE TABLE IF NOT EXISTS users (
+                        CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT NOT NULL,
-                email TEXT UNIQUE NOT NULL,
-                password_hash TEXT NOT NULL,
+                name TEXT,
+                email TEXT UNIQUE,
+                phone TEXT UNIQUE,
+                password_hash TEXT,
+                google_id TEXT UNIQUE,
                 language TEXT DEFAULT 'en',
                 difficulty_level TEXT DEFAULT 'unassessed',
+                is_verified INTEGER DEFAULT 0,
+                otp_code TEXT,
+                otp_expiry TIMESTAMP,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 

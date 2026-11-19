@@ -4,6 +4,11 @@ from flask_cors import CORS
 from database import init_db, get_db
 from auth import hash_password, verify_password, create_token, token_required
 import json
+import random
+import smtplib
+from email.mime.text import MIMEText
+from datetime import datetime, timedelta
+from flask_dance.contrib.google import make_google_blueprint, google
 
 # Content Imports
 from phishing_content import PHISHING_QUESTIONS
@@ -16,6 +21,40 @@ from translations import TRANSLATIONS
 app = Flask(__name__)
 CORS(app)
 app.secret_key = 'cyberfit-secret-key-123' # Required for sessions
+# ============ GOOGLE OAUTH SETUP ============
+import os
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # For local testing only
+os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+
+# You must get these from console.cloud.google.com
+GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET"
+
+google_bp = make_google_blueprint(
+    client_id=GOOGLE_CLIENT_ID,
+    client_secret=GOOGLE_CLIENT_SECRET,
+    redirect_to="google_login_callback",
+    scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
+)
+app.register_blueprint(google_bp, url_prefix="/login")
+
+# ============ EMAIL OTP SENDER ============
+# Replace with your actual Gmail and App Password
+SENDER_EMAIL = "your_email@gmail.com"
+SENDER_PASSWORD = "your_16_letter_app_password" 
+
+def send_email_otp(receiver_email, otp):
+    msg = MIMEText(f"Welcome to CyberFit!\n\nYour verification code is: {otp}\n\nThis code expires in 10 minutes.")
+    msg['Subject'] = 'CyberFit - Your Verification Code'
+    msg['From'] = SENDER_EMAIL
+    msg['To'] = receiver_email
+    
+    try:
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as server:
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, receiver_email, msg.as_string())
+    except Exception as e:
+        print(f"Error sending email: {e}")
 
 with app.app_context():
     init_db()
@@ -380,6 +419,102 @@ def malicious_app_submit():
         conn.close()
     return jsonify({'score': score, 'results': results})
 
+
+# ============ GOOGLE LOGIN & OTP FLOW ============
+
+@app.route('/login/google')
+def google_login():
+    if not google.authorized:
+        return redirect(url_for("google.login"))
+    
+    resp = google.get("/oauth2/v1/userinfo")
+    if not resp.ok:
+        return "Failed to fetch user info", 400
+        
+    user_info = resp.json()
+    email = user_info['email']
+    name = user_info.get('name', 'User')
+    google_id = user_info['id']
+
+    conn = get_db()
+    try:
+        user = conn.execute('SELECT * FROM users WHERE email = ? OR google_id = ?', (email, google_id)).fetchone()
+        
+        if user and user['is_verified']:
+            # Returning verified user -> Log in directly
+            token = create_token(user['id'], user['email'])
+            session['user_id'] = user['id']
+            return redirect('/dashboard') # (In a real app, pass the token via URL or cookie)
+        
+        else:
+            # New user OR unverified user -> Generate OTP
+            otp = str(random.randint(100000, 999999))
+            expiry = datetime.now() + timedelta(minutes=10)
+            
+            if user:
+                # Update existing unverified user
+                conn.execute('UPDATE users SET otp_code = ?, otp_expiry = ? WHERE id = ?', (otp, expiry, user['id']))
+                user_id = user['id']
+            else:
+                # Create new user
+                cur = conn.execute('INSERT INTO users (name, email, google_id, is_verified, otp_code, otp_expiry) VALUES (?, ?, ?, 0, ?, ?)', 
+                                   (name, email, google_id, otp, expiry))
+                user_id = cur.lastrowid
+            conn.commit()
+            
+            # Send OTP (Print to console for testing)
+            print(f"\n=== 🚨 MOCK EMAIL SENT TO {email} ===")
+            print(f"YOUR OTP IS: {otp}")
+            print("=======================================\n")
+            # send_email_otp(email, otp) # Uncomment this when you have real SMTP credentials
+            
+            return redirect(f'/verify-email?user_id={user_id}')
+    finally:
+        conn.close()
+
+
+@app.route('/verify-email', methods=['GET', 'POST'])
+def verify_email():
+    user_id = request.args.get('user_id')
+    
+    if request.method == 'POST':
+        entered_otp = request.form.get('otp')
+        
+        conn = get_db()
+        try:
+            user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+            
+            if not user or user['otp_code'] != entered_otp:
+                return "❌ Invalid OTP. Please try again.", 400
+            
+            # Check expiry
+            expiry = datetime.strptime(user['otp_expiry'], '%Y-%m-%d %H:%M:%S.%f')
+            if datetime.now() > expiry:
+                return "❌ OTP Expired. Please log in again.", 400
+                
+            # Mark verified
+            conn.execute('UPDATE users SET is_verified = 1, otp_code = NULL WHERE id = ?', (user_id,))
+            conn.commit()
+            
+            # Log them in
+            token = create_token(user['id'], user['email'])
+            session['user_id'] = user['id']
+            return redirect('/dashboard')
+        finally:
+            conn.close()
+
+    # Simple form to enter OTP (You can style this beautifully)
+    return '''
+        <div style="font-family: sans-serif; text-align: center; margin-top: 100px;">
+            <h2>Check Your Email</h2>
+            <p>We sent a 6-digit code to your email address.</p>
+            <form method="POST">
+                <input type="text" name="otp" placeholder="Enter OTP" style="padding: 10px; font-size: 18px; letter-spacing: 5px; text-align: center;" required>
+                <br><br>
+                <button type="submit" style="padding: 10px 20px; background: #1a237e; color: white; border: none; border-radius: 5px;">Verify</button>
+            </form>
+        </div>
+    '''
 
 # ============ REPORTING ============
 @app.route('/api/report-1930', methods=['POST'])
