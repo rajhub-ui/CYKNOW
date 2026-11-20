@@ -5,185 +5,227 @@
     <title>CyberFit — Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: system-ui, sans-serif; background: #f0f4f8; margin: 0; padding: 2rem 1rem; color: #222; }
-        .container { max-width: 900px; margin: 0 auto; }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        h1 { color: #1a237e; margin: 0; font-size: 1.8rem; }
-        .logout-btn { background: #c62828; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.9rem; font-weight: 600; }
-        .score-hero { background: linear-gradient(135deg, #1a237e, #3949ab); color: white; padding: 2rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; box-shadow: 0 4px 15px rgba(26,35,126,0.2); }
-        .score-hero h2 { margin: 0 0 0.5rem; font-size: 1.2rem; font-weight: 500; opacity: 0.9; }
-        .score-hero .num { font-size: 3.5rem; font-weight: 800; line-height: 1; }
-        .score-hero .sub { font-size: 1rem; opacity: 0.8; margin-top: 0.5rem; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
-        @media (max-width: 768px) { .grid { grid-template-columns: 1fr; } }
-        .card { background: white; border-radius: 10px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-        .card h3 { margin-top: 0; color: #333; border-bottom: 1px solid #eee; padding-bottom: 0.75rem; margin-bottom: 1rem; }
-        .module-link { display: flex; align-items: center; justify-content: space-between; padding: 1rem; background: #f8f9fa; border-radius: 8px; text-decoration: none; color: #333; font-weight: 600; margin-bottom: 0.75rem; transition: background 0.2s; }
-        .module-link:hover { background: #e3f2fd; }
-        .module-link .arrow { color: #1a237e; font-size: 1.2rem; }
-        select, textarea { width: 100%; padding: 0.75rem; border: 1px solid #ccc; border-radius: 6px; font-family: inherit; font-size: 0.95rem; margin-bottom: 1rem; }
-        textarea { resize: vertical; min-height: 100px; }
-        .btn-primary { background: #1a237e; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; }
-        .report-output { background: #263238; color: #aed581; padding: 1rem; border-radius: 6px; font-family: monospace; font-size: 0.85rem; white-space: pre-wrap; margin-top: 1rem; display: none; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f8fafc; color: #111; display: flex; height: 100vh; overflow: hidden; }
+        
+        /* Sidebar */
+        .sidebar { width: 260px; background: #fff; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; padding: 1.5rem; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: #111; margin-bottom: 2rem; display: flex; align-items: center; gap: 0.5rem; }
+        .nav-item { padding: 0.8rem 1rem; border-radius: 8px; text-decoration: none; color: #64748b; font-weight: 500; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.75rem; transition: all 0.2s; font-size: 0.95rem; }
+        .nav-item:hover { background: #f1f5f9; color: #111; }
+        .nav-item.active { background: #111; color: #fff; }
+        .nav-bottom { margin-top: auto; border-top: 1px solid #e2e8f0; padding-top: 1rem; }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 2.5rem 3rem; overflow-y: auto; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2.5rem; }
+        h1 { font-size: 1.8rem; font-weight: 700; color: #111; letter-spacing: -0.5px; }
+        
+        /* Language Toggle */
+        .lang-toggle { display: flex; gap: 0.5rem; font-size: 0.9rem; font-weight: 600; align-items: center; background: #fff; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .lang-toggle a { color: #64748b; text-decoration: none; transition: color 0.2s; }
+        .lang-toggle a:hover, .lang-toggle a.active { color: #111; }
+
+        /* Grid Layout */
+        .grid-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; }
+
+        /* Cards */
+        .card { background: #fff; border-radius: 12px; padding: 1.5rem; border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0,0,0,0.02); margin-bottom: 1.5rem; }
+        .card h3 { font-size: 1.1rem; color: #111; margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; }
+
+        /* Score Banner */
+        .score-banner { background: #111; color: #fff; padding: 2rem; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .score-banner h2 { font-size: 1.1rem; font-weight: 400; color: #aaa; margin-bottom: 0.5rem; }
+        .score-banner .name { color: #fff; font-weight: 600; }
+        .score-banner .num { font-size: 3.5rem; font-weight: 700; line-height: 1; }
+        .score-banner .sub { font-size: 0.9rem; color: #aaa; margin-top: 0.5rem; }
+
+        /* Playgrounds */
+        .playground-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 2rem; }
+        .pg-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; text-decoration: none; color: #111; display: flex; flex-direction: column; transition: all 0.2s; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .pg-card:hover { border-color: #111; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .pg-icon { font-size: 1.8rem; margin-bottom: 1rem; }
+        .pg-card h4 { font-size: 1.05rem; margin-bottom: 0.5rem; font-weight: 600; }
+        .pg-card p { font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 1.5rem; flex: 1; }
+        .pg-btn { font-size: 0.85rem; font-weight: 600; color: #111; display: flex; align-items: center; justify-content: space-between; }
+
+        /* Stats */
+        .stat-row { display: flex; justify-content: space-between; padding: 0.75rem 0; border-bottom: 1px solid #f1f5f9; font-size: 0.95rem; }
+        .stat-row:last-child { border-bottom: none; }
+        .stat-label { color: #64748b; }
+        .stat-value { font-weight: 600; color: #111; }
+
+        /* Quick Actions */
+        .quick-action { display: flex; align-items: center; gap: 1rem; padding: 1rem; border-radius: 8px; text-decoration: none; color: #111; border: 1px solid #e2e8f0; margin-bottom: 0.75rem; transition: background 0.2s; }
+        .quick-action:hover { background: #f8fafc; border-color: #cbd5e1; }
+        .qa-icon { font-size: 1.2rem; }
+        .qa-text h5 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+        .qa-text p { font-size: 0.8rem; color: #64748b; }
+
+        /* Panic FAB */
+        .panic-fab { position: fixed; bottom: 2rem; right: 2rem; width: 70px; height: 70px; background: #111; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); text-decoration: none; z-index: 9999; transition: transform 0.2s; font-size: 1.8rem; border: 4px solid #fff; }
+        .panic-fab:hover { transform: scale(1.05); background: #c62828; }
+
+        /* Language Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+        .modal-content { background: white; padding: 2.5rem; border-radius: 12px; max-width: 400px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.1); width: 90%; }
     </style>
 </head>
 <body>
-    <!-- Language Popup Modal -->
+
+    <!-- LANGUAGE POPUP MODAL -->
     {% if show_lang_popup %}
-    <div id="lang-modal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 1000;">
-        <div style="background: white; padding: 2rem; border-radius: 12px; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2);">
-            <h2 style="color: #1a237e; margin-top: 0;">🌐 {{ t.lang_popup_title }}</h2>
-            <p style="color: #555; margin-bottom: 1.5rem;">{{ t.lang_popup_desc }}</p>
+    <div class="modal-overlay">
+        <div class="modal-content">
+            <div style="font-size: 2rem; margin-bottom: 1rem;">🌐</div>
+            <h2 style="color: #111; margin-bottom: 0.5rem; font-size: 1.4rem;">{{ t.lang_popup_title }}</h2>
+            <p style="color: #666; margin-bottom: 2rem; font-size: 0.95rem;">{{ t.lang_popup_desc }}</p>
             <div style="display: flex; gap: 1rem; justify-content: center;">
-                <a href="/set_language/en" style="background: #1a237e; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: bold;">English</a>
-                <a href="/set_language/hi" style="background: #c62828; color: white; padding: 0.75rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: bold;">हिंदी</a>
+                <a href="/set_language/en" style="flex: 1; background: #111; color: white; padding: 0.8rem; border-radius: 8px; text-decoration: none; font-weight: 600;">English</a>
+                <a href="/set_language/hi" style="flex: 1; background: #f1f5f9; color: #111; border: 1px solid #e2e8f0; padding: 0.8rem; border-radius: 8px; text-decoration: none; font-weight: 600;">हिंदी</a>
             </div>
         </div>
     </div>
     {% endif %}
 
-    <div class="container">
-        <!-- Language Toggle -->
-        <div style="text-align: right; margin-bottom: 1rem;">
-            <span style="font-size: 0.9rem; color: #666;">Language: </span>
-            <a href="/set_language/en" style="font-weight: bold; color: {% if current_lang == 'en' %}#1a237e{% else %}#888{% endif %}; text-decoration: none;">English</a> | 
-            <a href="/set_language/hi" style="font-weight: bold; color: {% if current_lang == 'hi' %}#1a237e{% else %}#888{% endif %}; text-decoration: none;">हिंदी</a>
-        </div>
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo">🛡️ CyberFit</div>
+        
+        <a href="/dashboard" class="nav-item active">📊 {{ t.nav_dash }}</a>
+        <a href="/learning" class="nav-item">📚 {{ t.nav_learn }}</a>
+        <a href="/triage" class="nav-item">🚨 {{ t.nav_triage }}</a>
+        <a href="/contacts" class="nav-item">📞 {{ t.nav_contacts }}</a>
+        <a href="/report" class="nav-item">📝 {{ t.nav_report }}</a>
 
+        <div class="nav-bottom">
+            <a href="/admin" class="nav-item">👑 {{ t.nav_admin }}</a>
+            <a href="/logout" class="nav-item">🚪 {{ t.nav_logout }}</a>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
         <header>
-            <h1>🛡️ {{ t.dashboard_title }}</h1>
-            <div style="display: flex; gap: 1rem;">
-                <a href="/admin" style="color: #1a237e; text-decoration: none; font-weight: 600; font-size: 0.9rem; padding-top: 0.5rem;">{{ t.admin_panel }}</a>
-                <a href="/test" class="logout-btn" onclick="localStorage.removeItem('cyberfit_token');">{{ t.logout }}</a>
+            <h1>{{ t.dash_title }}</h1>
+            <div class="lang-toggle">
+                <a href="/set_language/en" class="{% if current_lang == 'en' %}active{% endif %}">EN</a>
+                <span style="color:#cbd5e1;">|</span>
+                <a href="/set_language/hi" class="{% if current_lang == 'hi' %}active{% endif %}">HI</a>
             </div>
         </header>
 
-        <div class="score-hero">
+        <div class="grid-layout">
+            <!-- LEFT COLUMN -->
             <div>
-                <h2>{{ t.welcome }}, <span id="user-name">...</span></h2>
-                <div class="sub">{{ t.overall_score }}</div>
-            </div>
-            <div style="text-align: right;">
-                <div class="num" id="overall-score">0</div>
-                <div class="sub"><span id="modules-completed">0</span> {{ t.modules_completed }}</div>
-            </div>
-                    <!-- THE PANIC BUTTON -->
-           <!-- FLOATING PANIC BUTTON -->
-    <a href="/triage" class="panic-fab" title="Think you are being scammed?">
-        <span style="font-size: 2rem;">🚨</span>
-    </a>
+                <!-- SCORE BANNER -->
+                <div class="score-banner">
+                    <div>
+                        <h2>{{ t.welcome_user }}, <span class="name" id="user-name">...</span></h2>
+                        <div class="sub">{{ t.score_sub }}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="num" id="overall-score">0</div>
+                        <div class="sub"><span id="modules-completed">0</span> {{ t.modules_comp }}</div>
+                    </div>
+                </div>
 
-    <style>
-        .panic-fab {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            width: 75px;
-            height: 75px;
-            background: #c62828;
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 6px 20px rgba(198, 40, 40, 0.5);
-            border: 3px solid #ef5350;
-            text-decoration: none;
-            z-index: 9999;
-            animation: pulse-ring 2s infinite;
-            transition: transform 0.2s;
-        }
-        
-        .panic-fab:hover {
-            transform: scale(1.1);
-            background: #b71c1c;
-        }
+                <!-- PLAYGROUNDS -->
+                <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">{{ t.playgrounds }}</h3>
+                <div class="playground-grid">
+                    <a href="/phishing" class="pg-card">
+                        <div class="pg-icon">🎣</div>
+                        <h4>{{ t.pg_phishing }}</h4>
+                        <p>{{ t.pg_phishing_desc }}</p>
+                        <div class="pg-btn"><span>{{ t.btn_start }}</span> <span>→</span></div>
+                    </a>
 
-        /* Pulsing animation */
-        @keyframes pulse-ring {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(198, 40, 40, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(198, 40, 40, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(198, 40, 40, 0); }
-        }
+                    <a href="/digital-arrest" class="pg-card">
+                        <div class="pg-icon">🚨</div>
+                        <h4>{{ t.pg_arrest }}</h4>
+                        <p>{{ t.pg_arrest_desc }}</p>
+                        <div class="pg-btn"><span>{{ t.btn_enter }}</span> <span>→</span></div>
+                    </a>
 
-        /* Tooltip text that appears on hover */
-        .panic-fab::before {
-            content: 'Scam Help';
-            position: absolute;
-            right: 90px;
-            background: #333;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            white-space: nowrap;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-        
-        .panic-fab:hover::before {
-            opacity: 1;
-        }
-    </style>
-        </div>
+                    <a href="/malicious-app" class="pg-card">
+                        <div class="pg-icon">📱</div>
+                        <h4>{{ t.pg_app }}</h4>
+                        <p>{{ t.pg_app_desc }}</p>
+                        <div class="pg-btn"><span>{{ t.btn_quiz }}</span> <span>→</span></div>
+                    </a>
+                </div>
 
-        <div class="grid">
-            <div class="card">
-                <h3>📈 {{ t.score_history }}</h3>
-                <canvas id="scoreChart" height="200"></canvas>
+                <!-- CHART -->
+                <div class="card">
+                    <h3>{{ t.score_history }}</h3>
+                    <div style="height: 200px; width: 100%;">
+                        <canvas id="scoreChart"></canvas>
+                    </div>
+                </div>
             </div>
 
-            <div class="card">
-                <h3>🎯 {{ t.training_center }}</h3>
-                
-                <p style="font-size: 0.85rem; color: #666; margin-top: 0;"><strong>{{ t.step_1 }}</strong></p>
-                <a href="/learning" class="module-link" style="background: #e8eaf6; color: #1a237e; border: 1px solid #c5cae9;">
-                    <span>📚 {{ t.read_guides }}</span>
-                    <span class="arrow">→</span>
-                </a>
+            <!-- RIGHT COLUMN -->
+            <div>
+                <!-- ALERT -->
+                <div class="card" style="border-left: 4px solid #c62828;">
+                    <h3 style="color: #c62828; margin-bottom: 0.5rem;">⚠️ {{ t.threat_adv }}</h3>
+                    <p style="font-size: 0.85rem; color: #64748b; line-height: 1.5;">
+                        {{ t.threat_desc }}
+                    </p>
+                </div>
 
-                <p style="font-size: 0.85rem; color: #666; margin-top: 1rem;"><strong>{{ t.step_2 }}</strong></p>
-                <a href="/phishing" class="module-link">
-                    <span>🎣 {{ t.phishing_test }}</span>
-                    <span class="arrow">→</span>
-                </a>
-                <a href="/digital-arrest" class="module-link">
-                    <span>🚨 {{ t.arrest_test }}</span>
-                    <span class="arrow">→</span>
-                </a>
-                <a href="/malicious-app" class="module-link">
-                    <span>📱 {{ t.app_test }}</span>
-                    <span class="arrow">→</span>
-                </a>
-                
-                <a href="/contacts" class="module-link" style="background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; margin-top: 1.5rem;">
-                    <span>📞 {{ t.emergency }}</span>
-                    <span class="arrow">→</span>
-                </a>
+                <!-- STATS -->
+                <div class="card">
+                    <h3>{{ t.plat_stats }}</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">{{ t.sec_level }}</span>
+                        <span class="stat-value" style="color: #2e7d32;">High</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">{{ t.modules_comp }}</span>
+                        <span class="stat-value" id="modules-completed-sidebar">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">{{ t.acc_status }}</span>
+                        <span class="stat-value">{{ t.verified }}</span>
+                    </div>
+                </div>
+
+                <!-- QUICK ACTIONS -->
+                <div class="card">
+                    <h3>{{ t.quick_actions }}</h3>
+                    <a href="/triage" class="quick-action">
+                        <div class="qa-icon">🚨</div>
+                        <div class="qa-text">
+                            <h5>{{ t.qa_triage }}</h5>
+                            <p>{{ t.qa_triage_desc }}</p>
+                        </div>
+                    </a>
+                    <a href="/report" class="quick-action">
+                        <div class="qa-icon">📝</div>
+                        <div class="qa-text">
+                            <h5>{{ t.qa_report }}</h5>
+                            <p>{{ t.qa_report_desc }}</p>
+                        </div>
+                    </a>
+                </div>
             </div>
-        </div>
-
-        <div class="card">
-            <h3>📝 {{ t.report_gen }}</h3>
-            <select id="scam-type">
-                <option value="Digital Arrest Scam">Digital Arrest Scam</option>
-                <option value="Phishing / Fake Link">Phishing / Fake Link</option>
-                <option value="Malicious App / APK">Malicious App / APK</option>
-                <option value="UPI / OTP Fraud">UPI / OTP Fraud</option>
-            </select>
-            <textarea id="scam-desc" placeholder="{{ t.report_placeholder }}"></textarea>
-            <button class="btn-primary" onclick="generateReport()">{{ t.generate_report_btn }}</button>
-            <pre class="report-output" id="report-output"></pre>
         </div>
     </div>
+
+    <!-- FLOATING PANIC BUTTON -->
+    <a href="/triage" class="panic-fab" title="Scam Help">
+        🚨
+    </a>
 
     <script>
         const TOKEN_KEY = 'cyberfit_token';
         const token = localStorage.getItem(TOKEN_KEY);
         let chartInstance = null;
+
+        Chart.defaults.color = '#64748b';
+        Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        Chart.defaults.font.size = 12;
 
         async function loadDashboard() {
             if (!token) { window.location.href = '/test'; return; }
@@ -195,55 +237,60 @@
                 const data = await res.json();
                 if (!res.ok) { window.location.href = '/test'; return; }
 
-                
+                if (data.difficulty_level === 'unassessed') {
+                    window.location.href = '/survey';
+                    return;
+                }
 
                 document.getElementById('user-name').textContent = data.user_name;
                 document.getElementById('overall-score').textContent = data.overall_score;
                 document.getElementById('modules-completed').textContent = data.modules_completed;
+                document.getElementById('modules-completed-sidebar').textContent = data.modules_completed;
 
                 renderChart(data.attempts);
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         function renderChart(attempts) {
             const ctx = document.getElementById('scoreChart').getContext('2d');
+            
             const labels = attempts.map(a => {
                 const date = new Date(a.attempted_at);
-                const mod = a.module_type === 'phishing' ? 'Phishing' : 'Arrest';
+                const mod = a.module_type === 'phishing' ? 'Phishing' : (a.module_type === 'digital_arrest' ? 'Arrest' : 'App');
                 return `${mod} (${date.getDate()}/${date.getMonth()+1})`;
             });
             const scores = attempts.map(a => a.score);
-            const colors = attempts.map(a => a.module_type === 'phishing' ? '#3949ab' : '#c62828');
 
             if (chartInstance) chartInstance.destroy();
 
             chartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{ label: 'Score (%)', data: scores, backgroundColor: colors, borderRadius: 6 }]
+                type: 'line',
+                data: { 
+                    labels: labels, 
+                    datasets: [{ 
+                        label: 'Score',
+                        data: scores, 
+                        borderColor: '#111',
+                        backgroundColor: 'rgba(17, 17, 17, 0.05)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#111',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.3
+                    }] 
                 },
-                options: { responsive: true, scales: { y: { beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        y: { beginAtZero: true, max: 100, grid: { color: '#f1f5f9', drawBorder: false }, ticks: { display: false } },
+                        x: { grid: { display: false, drawBorder: false }, ticks: { color: '#64748b' } }
+                    }
+                }
             });
-        }
-
-        async function generateReport() {
-            const type = document.getElementById('scam-type').value;
-            const desc = document.getElementById('scam-desc').value;
-            if (!desc.trim()) { alert('Please enter a brief description.'); return; }
-
-            const res = await fetch('/api/report-1930', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-                body: JSON.stringify({ scam_type: type, description: desc })
-            });
-            const data = await res.json();
-            
-            const output = document.getElementById('report-output');
-            output.textContent = data.report_text;
-            output.style.display = 'block';
         }
 
         loadDashboard();

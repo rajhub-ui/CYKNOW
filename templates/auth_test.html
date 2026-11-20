@@ -1,121 +1,198 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>CyberFit — Auth Test</title>
+    <title>CyberFit — Authentication</title>
     <style>
-        body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem; background: #f5f5f5; }
-        h1 { color: #1a237e; margin-bottom: 0.25rem; }
-        .sub { color: #666; margin-bottom: 1.5rem; }
-        .card { background: white; padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        h3 { margin-top: 0; color: #333; }
-        input, button { padding: 0.5rem; margin: 0.25rem 0; font-size: 1rem; }
-        input { width: 100%; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { background: #1a237e; color: white; border: none; border-radius: 4px; cursor: pointer; padding: 0.5rem 1rem; margin-top: 0.5rem; }
-        button:hover { background: #0d1657; }
-        pre { background: #263238; color: #aed581; padding: 1rem; border-radius: 4px; overflow-x: auto; font-size: 0.85rem; white-space: pre-wrap; word-break: break-word; }
-        .token-box { background: #fff3e0; padding: 0.5rem; border-radius: 4px; word-break: break-all; font-family: monospace; font-size: 0.8rem; margin-top: 0.5rem; }
-        .ok { color: #2e7d32; font-weight: 600; }
-        .err { color: #c62828; font-weight: 600; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; height: 100vh; display: flex; background: #fff; color: #111; }
+        
+        .split-container { display: flex; width: 100%; height: 100%; }
+        .left-panel { width: 50%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; overflow-y: auto; }
+        .right-panel { width: 50%; background: url('https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop') center/cover no-repeat; position: relative; display: flex; flex-direction: column; justify-content: flex-end; padding: 3rem; }
+        
+        .right-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 100%); }
+        .right-content { position: relative; z-index: 1; color: white; }
+        .right-content h2 { font-size: 2rem; font-weight: 600; margin-bottom: 0.5rem; }
+        .right-content p { font-size: 1rem; color: #ddd; line-height: 1.5; max-width: 80%; }
+        .carousel-dots { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+        .dot { width: 30px; height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; }
+        .dot.active { background: white; }
+
+        .form-container { width: 100%; max-width: 380px; }
+        .logo { text-align: center; font-size: 2.5rem; margin-bottom: 1.5rem; }
+        h1 { font-size: 1.8rem; font-weight: 600; text-align: center; margin-bottom: 0.5rem; color: #111; }
+        .subtitle { text-align: center; color: #666; font-size: 0.95rem; margin-bottom: 2rem; }
+
+        .oauth-btn { width: 100%; padding: 0.8rem; background: white; border: 1px solid #ddd; border-radius: 8px; font-size: 0.95rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.5rem; margin-bottom: 1rem; text-decoration: none; color: #333; transition: background 0.2s; }
+        .oauth-btn:hover { background: #f9f9f9; }
+        
+        .divider { display: flex; align-items: center; text-align: center; margin: 1.5rem 0; color: #999; font-size: 0.85rem; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid #eee; }
+        .divider::before { margin-right: 10px; }
+        .divider::after { margin-left: 10px; }
+
+        .input-group { margin-bottom: 1rem; }
+        .input-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: #333; }
+        .input-wrapper { position: relative; }
+        .input-group input { width: 100%; padding: 0.8rem 1rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; transition: border-color 0.2s; }
+        .input-group input:focus { outline: none; border-color: #111; }
+        
+        .forgot-link { float: right; font-size: 0.85rem; color: #666; text-decoration: none; font-weight: 500; margin-top: -1.5rem; position: relative; z-index: 10; }
+        .forgot-link:hover { color: #111; }
+
+        .submit-btn { width: 100%; padding: 1rem; background: #111; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 1.5rem; transition: background 0.2s; }
+        .submit-btn:hover { background: #333; }
+
+        .toggle-text { text-align: center; margin-top: 1.5rem; font-size: 0.9rem; color: #666; }
+        .toggle-text a { color: #111; font-weight: 600; text-decoration: none; cursor: pointer; }
+        .toggle-text a:hover { text-decoration: underline; }
+
+        .footer { margin-top: 3rem; font-size: 0.75rem; color: #999; text-align: center; line-height: 1.5; }
+        .footer a { color: #666; text-decoration: underline; }
+
+        @media (max-width: 768px) {
+            .right-panel { display: none; }
+            .left-panel { width: 100%; }
+        }
     </style>
 </head>
 <body>
-    <h1>🛡️ CyberFit Auth Test</h1>
-        <div class="card">
-        <h3>Instant Login</h3>
-        <a href="/login/google" style="display: block; text-align: center; background: #db4437; color: white; padding: 0.75rem; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 1rem; margin-bottom: 1rem;">
-            Continue with Google
-        </a>
-        <p style="font-size: 0.8rem; color: #666; text-align: center; margin: 0;">New users will be asked to verify via Email OTP.</p>
-    </div>
-    
-    <div class="card">
-        <h3>1. Register</h3>
-        <input id="reg-name" placeholder="Full name" />
-        <input id="reg-email" placeholder="Email (e.g. test@example.com)" />
-        <input id="reg-password" type="password" placeholder="Password (min 6 chars)" />
-        <button onclick="register()">Register</button>
-    </div>
+    <div class="split-container">
+        <!-- Left Panel: Form -->
+        <div class="left-panel">
+            <div class="form-container">
+                <div class="logo">🛡️</div>
+                <h1 id="form-title">{{ t.welcome_back }}</h1>
+                <p class="subtitle" id="form-subtitle">{{ t.sign_in_sub }}</p>
 
-    <div class="card">
-        <h3>2. Login</h3>
-        <input id="log-email" placeholder="Email" />
-        <input id="log-password" type="password" placeholder="Password" />
-        <button onclick="login()">Login</button>
-    </div>
+                <!-- OAuth Buttons -->
+                <a href="/login/google" class="oauth-btn">
+                    <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                    {{ t.continue_google }}
+                </a>
+                <button class="oauth-btn">
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.56-1.702z"/></svg>
+                    {{ t.continue_apple }}
+                </button>
 
-    <div class="card">
-        <h3>3. Get My Profile (protected)</h3>
-        <button onclick="getMe()">Call /api/auth/me</button>
-        <div id="token-display"><em>No token yet. Register or login first.</em></div>
-    </div>
+                <div class="divider">{{ t.or }}</div>
 
-    <div class="card">
-        <h3>Response</h3>
-        <pre id="output">(nothing yet)</pre>
+                <!-- Form -->
+                <form id="auth-form">
+                    <!-- Name field (Only for Register) -->
+                    <div class="input-group" id="name-group" style="display: none;">
+                        <label>Full Name</label>
+                        <input type="text" id="name" placeholder="Enter your name">
+                    </div>
+
+                    <div class="input-group">
+                        <label>{{ t.email }}</label>
+                        <input type="email" id="email" placeholder="Example@gmail.com" required>
+                    </div>
+
+                    <div class="input-group">
+                        <a href="#" class="forgot-link">{{ t.forgot_pass }}</a>
+                        <label>{{ t.password }}</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="password" placeholder="Enter your password" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submit-btn">{{ t.btn_login }}</button>
+                </form>
+
+                <div class="toggle-text">
+                    <span id="toggle-msg">{{ t.no_account }}</span> 
+                    <a onclick="toggleMode()" id="toggle-btn">{{ t.btn_signup }}</a>
+                </div>
+
+                <div class="footer">
+                    {{ t.terms }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Image -->
+        <div class="right-panel">
+            <div class="right-content">
+                <div class="carousel-dots">
+                    <div class="dot active"></div>
+                    <div class="dot"></div>
+                </div>
+                <h2>Discover your next journey</h2>
+                <p>Explore ideas, stories, and experiences designed to inspire your everyday life, guiding you through meaningful moments and fresh insights every day.</p>
+            </div>
+        </div>
     </div>
 
     <script>
-        let token = localStorage.getItem('cyberfit_token') || '';
+        let isLoginMode = true;
 
-        function show(data) {
-            document.getElementById('output').textContent = JSON.stringify(data, null, 2);
-        }
+        function toggleMode() {
+            isLoginMode = !isLoginMode;
+            
+            const title = document.getElementById('form-title');
+            const subtitle = document.getElementById('form-subtitle');
+            const nameGroup = document.getElementById('name-group');
+            const submitBtn = document.getElementById('submit-btn');
+            const toggleMsg = document.getElementById('toggle-msg');
+            const toggleBtn = document.getElementById('toggle-btn');
 
-        function updateTokenDisplay() {
-            document.getElementById('token-display').innerHTML =
-                '<div class="token-box">Saved token: ' + token.slice(0, 50) + '...</div>';
-        }
-
-        async function post(url, body) {
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
-            });
-            return { status: res.status, data: await res.json() };
-        }
-
-                async function register() {
-            const result = await post('/api/auth/register', {
-                name: document.getElementById('reg-name').value,
-                email: document.getElementById('reg-email').value,
-                password: document.getElementById('reg-password').value
-            });
-            if (result.data.token) { 
-                token = result.data.token; 
-                localStorage.setItem('cyberfit_token', token); 
-                updateTokenDisplay(); 
-                // ADD THIS LINE:
-                window.location.href = '/dashboard'; 
+            if (isLoginMode) {
+                title.textContent = "{{ t.welcome_back }}";
+                subtitle.textContent = "{{ t.sign_in_sub }}";
+                nameGroup.style.display = "none";
+                submitBtn.textContent = "{{ t.btn_login }}";
+                toggleMsg.textContent = "{{ t.no_account }}";
+                toggleBtn.textContent = "{{ t.btn_signup }}";
             } else {
-                show(result.data);
+                title.textContent = "{{ t.create_acc }}";
+                subtitle.textContent = "{{ t.join_sub }}";
+                nameGroup.style.display = "block";
+                submitBtn.textContent = "{{ t.btn_signup }}";
+                toggleMsg.textContent = "{{ t.has_account }}";
+                toggleBtn.textContent = "{{ t.btn_login }}";
             }
         }
 
-                async function login() {
-            const result = await post('/api/auth/login', {
-                email: document.getElementById('log-email').value,
-                password: document.getElementById('log-password').value
-            });
-            if (result.data.token) { 
-                token = result.data.token; 
-                localStorage.setItem('cyberfit_token', token); 
-                updateTokenDisplay(); 
-                // ADD THIS LINE:
-                window.location.href = '/dashboard'; 
-            } else {
-                show(result.data);
-            }
-        }
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const name = document.getElementById('name').value;
+            
+            const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+            const payload = isLoginMode ? { email, password } : { name, email, password };
 
-        async function getMe() {
-            if (!token) { show({error: 'No token. Register or login first.'}); return; }
-            const res = await fetch('/api/auth/me', {
-                headers: {'Authorization': 'Bearer ' + token}
-            });
-            show(await res.json());
-        }
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = "Processing...";
+            submitBtn.disabled = true;
+
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    localStorage.setItem('cyberfit_token', data.token);
+                    window.location.href = '/dashboard';
+                } else {
+                    alert(data.error || "Authentication failed");
+                }
+            } catch (err) {
+                alert("Network error. Please try again.");
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
+        });
     </script>
 </body>
 </html>

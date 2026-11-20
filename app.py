@@ -27,8 +27,8 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # For local testing only
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
 # You must get these from console.cloud.google.com
-GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "YOUR_GOOGLE_CLIENT_SECRET"
+GOOGLE_CLIENT_ID = "920919631814-8l0rned731rugtncho568fevfm2akjjb.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
 
 google_bp = make_google_blueprint(
     client_id=GOOGLE_CLIENT_ID,
@@ -247,6 +247,11 @@ def api_dashboard():
         })
     finally:
         conn.close()
+
+@app.route('/logout')
+def logout():
+    session.clear() # This clears the user_id AND the language
+    return redirect('/test')
 
 @app.route('/survey')
 def survey_page():
@@ -556,6 +561,10 @@ def analyze_text():
 
     result = analyze_scam_message(text)
     return jsonify(result)
+
+@app.route('/report')
+def report_page():
+    return render_template('report.html')
 
 if __name__ == '__main__':
     app.run(debug=True, port=3000)
