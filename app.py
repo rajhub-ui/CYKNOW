@@ -9,7 +9,7 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime, timedelta
 from flask_dance.contrib.google import make_google_blueprint, google
-
+from triage import analyze_scam_message
 # Content Imports
 from phishing_content import PHISHING_QUESTIONS
 from digital_arrest_scam import DIGITAL_ARREST_SCENARIO
@@ -540,6 +540,22 @@ I request the authorities to take immediate action to prevent financial loss and
 --- END OF REPORT ---"""
 
     return jsonify({'report_text': report_text})
+
+@app.route('/triage')
+def triage_page():
+    return render_template('triage.html')
+
+@app.route('/api/triage/analyze', methods=['POST'])
+@token_required
+def analyze_text():
+    data = request.get_json(silent=True) or {}
+    text = data.get('text', '')
+    
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+
+    result = analyze_scam_message(text)
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(debug=True, port=3000)
