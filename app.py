@@ -33,8 +33,14 @@ GOOGLE_CLIENT_SECRET = "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"
 google_bp = make_google_blueprint(
     client_id=GOOGLE_CLIENT_ID,
     client_secret=GOOGLE_CLIENT_SECRET,
-    redirect_to="google_login_callback",
-    scope=["openid", "https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"]
+    redirect_to="google_authorized",
+    scope = [
+    "openid",
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile"
+],
+
+reprompt_select_account=True
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
@@ -427,8 +433,8 @@ def malicious_app_submit():
 
 # ============ GOOGLE LOGIN & OTP FLOW ============
 
-@app.route('/login/google')
-def google_login():
+@app.route('/google_callback')
+def google_authorized():
     if not google.authorized:
         return redirect(url_for("google.login"))
     
@@ -449,7 +455,7 @@ def google_login():
             # Returning verified user -> Log in directly
             token = create_token(user['id'], user['email'])
             session['user_id'] = user['id']
-            return redirect('/dashboard') # (In a real app, pass the token via URL or cookie)
+            return redirect('/dashboard') 
         
         else:
             # New user OR unverified user -> Generate OTP
@@ -471,7 +477,6 @@ def google_login():
             print(f"\n=== 🚨 MOCK EMAIL SENT TO {email} ===")
             print(f"YOUR OTP IS: {otp}")
             print("=======================================\n")
-            # send_email_otp(email, otp) # Uncomment this when you have real SMTP credentials
             
             return redirect(f'/verify-email?user_id={user_id}')
     finally:

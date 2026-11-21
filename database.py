@@ -17,7 +17,7 @@ def init_db():
     conn = get_db()
     try:
         conn.executescript('''
-                        CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT,
                 email TEXT UNIQUE,
@@ -61,13 +61,38 @@ def init_db():
             );
         ''')
         
-        # --- SELF-HEALING SCRIPT ---
-        # This checks if your old database is missing the new column, and adds it automatically
+        # --- SELF-HEALING MIGRATIONS ---
         cursor = conn.execute("PRAGMA table_info(users)")
         columns = [col[1] for col in cursor.fetchall()]
+        
         if 'difficulty_level' not in columns:
             conn.execute("ALTER TABLE users ADD COLUMN difficulty_level TEXT DEFAULT 'unassessed'")
-            print('✅ Upgraded existing database: Added difficulty_level column')
+            print('✅ Upgraded DB: Added difficulty_level')
+            
+        # NOTE: We add the column without UNIQUE here, then create a UNIQUE INDEX below
+        if 'google_id' not in columns:
+            conn.execute("ALTER TABLE users ADD COLUMN google_id TEXT")
+            print('✅ Upgraded DB: Added google_id')
+            
+        if 'is_verified' not in columns:
+            conn.execute("ALTER TABLE users ADD COLUMN is_verified INTEGER DEFAULT 0")
+            print('✅ Upgraded DB: Added is_verified')
+            
+        if 'otp_code' not in columns:
+            conn.execute("ALTER TABLE users ADD COLUMN otp_code TEXT")
+            print('✅ Upgraded DB: Added otp_code')
+            
+        if 'otp_expiry' not in columns:
+            conn.execute("ALTER TABLE users ADD COLUMN otp_expiry TIMESTAMP")
+            print('✅ Upgraded DB: Added otp_expiry')
+
+        if 'phone' not in columns:
+            conn.execute("ALTER TABLE users ADD COLUMN phone TEXT")
+            print('✅ Upgraded DB: Added phone')
+
+        # Add unique indexes safely for existing tables
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone)")
 
         conn.commit()
         print('✅ Database initialized successfully')
