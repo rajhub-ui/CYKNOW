@@ -57,6 +57,27 @@ TRANSLATIONS = {
         # Popup
         'lang_popup_title': 'Select Your Language',
         'lang_popup_desc': 'Please choose your preferred language to continue.',
+
+        # Survey Translations
+        'survey_title': "Let's personalize your path!",
+        'survey_desc': 'Answer these 4 quick questions so we can tailor the learning content to your knowledge level.',
+        'survey_q1': '1. What does "Phishing" mean?',
+        'survey_q1_a': 'A way to catch fish',
+        'survey_q1_b': 'A fake message trying to steal your password',
+        'survey_q1_c': 'A computer virus',
+        'survey_q2': '2. You get a video call from a "CBI Officer" saying you are under "Digital Arrest". What should you do?',
+        'survey_q2_a': "Follow their instructions and don't tell anyone",
+        'survey_q2_b': 'Hang up immediately and call 1930',
+        'survey_q2_c': 'Ask for their badge number and verify later',
+        'survey_q3': '3. A WhatsApp message offers you a "Free Netflix Premium" APK file. What is the risk?',
+        'survey_q3_a': "No risk, it's just a free app",
+        'survey_q3_b': 'It might steal your banking passwords',
+        'survey_q3_c': 'It might drain your battery',
+        'survey_q4': '4. How confident are you in identifying a fake link before clicking it?',
+        'survey_q4_a': 'Not confident at all',
+        'survey_q4_b': 'Somewhat confident',
+        'survey_q4_c': 'Very confident',
+        'survey_btn': 'Generate My Personalized Path'
     },
     'hi': {
         # Login Page
@@ -116,5 +137,26 @@ TRANSLATIONS = {
         # Popup
         'lang_popup_title': 'अपनी भाषा चुनें',
         'lang_popup_desc': 'जारी रखने के लिए कृपया अपनी पसंदीदा भाषा चुनें।',
+
+        # Survey Translations
+        'survey_title': 'आइए अपना रास्ता चुनें!',
+        'survey_desc': 'इन 4 छोटे सवालों के जवाब दें ताकि हम आपके ज्ञान के स्तर के अनुसार सामग्री तैयार कर सकें।',
+        'survey_q1': '1. "फिशिंग" का क्या मतलब है?',
+        'survey_q1_a': 'मछली पकड़ने का एक तरीका',
+        'survey_q1_b': 'आपका पासवर्ड चुराने की कोशिश करने वाला एक फर्जी संदेश',
+        'survey_q1_c': 'एक कंप्यूटर वायरस',
+        'survey_q2': '2. आपको "CBI अधिकारी" से वीडियो कॉल आता है जो कहता है कि आप "डिजिटल अरेस्ट" में हैं। आपको क्या करना चाहिए?',
+        'survey_q2_a': 'उनके निर्देशों का पालन करें और किसी को न बताएं',
+        'survey_q2_b': 'तुरंत फोन काट दें और 1930 पर कॉल करें',
+        'survey_q2_c': 'उनका बैज नंबर मांगें और बाद में सत्यापित करें',
+        'survey_q3': '3. एक व्हाट्सएप संदेश "फ्री नेटफ्लिक्स प्रीमियम" APK फाइल का ऑफर देता है। क्या जोखिम है?',
+        'survey_q3_a': 'कोई जोखिम नहीं, यह सिर्फ एक मुफ्त ऐप है',
+        'survey_q3_b': 'यह आपके बैंकिंग पासवर्ड चुरा सकता है',
+        'survey_q3_c': 'यह आपकी बैटरी खत्म कर सकता है',
+        'survey_q4': '4. क्लिक करने से पहले फर्जी लिंक को पहचानने में आप कितने आश्वस्त हैं?',
+        'survey_q4_a': 'बिल्कुल भी आश्वस्त नहीं',
+        'survey_q4_b': 'कुछ हद तक आश्वस्त',
+        'survey_q4_c': 'बहुत आश्वस्त',
+        'survey_btn': 'मेरा पर्सनल पाथ जनरेट करें'
     }
 }

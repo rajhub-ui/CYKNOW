@@ -11,31 +11,53 @@
         h1 { color: #1a237e; margin-top: 0; }
         .q-block { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid #eee; }
         .q-block h3 { margin: 0 0 1rem; font-size: 1.05rem; color: #333; }
-        .option { display: block; margin-bottom: 0.5rem; cursor: pointer; font-size: 0.95rem; }
-        .option input { margin-right: 0.5rem; }
-        .btn { background: #1a237e; color: white; border: none; padding: 1rem; width: 100%; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+        .option { display: block; margin-bottom: 0.5rem; cursor: pointer; font-size: 0.95rem; line-height: 1.4; }
+        .option input { margin-right: 0.5rem; margin-top: 0.3rem; }
+        .btn { background: #1a237e; color: white; border: none; padding: 1rem; width: 100%; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 1rem; }
+        .btn:hover { background: #0d1657; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="card">
-            <h1>👋 Welcome to CyberFit!</h1>
-            <p style="color: #555; margin-bottom: 2rem;">To give you the best learning experience, take this quick 4-question assessment. We'll tailor the guides to your knowledge level.</p>
+            <h1>👋 {{ t.survey_title }}</h1>
+            <p style="color: #555; margin-bottom: 2rem;">{{ t.survey_desc }}</p>
             
             <form id="survey-form">
+                <!-- Q1 -->
                 <div class="q-block">
                     <h3>{{ t.survey_q1 }}</h3>
                     <label class="option"><input type="radio" name="q1" value="0" required> {{ t.survey_q1_a }}</label>
                     <label class="option"><input type="radio" name="q1" value="1"> {{ t.survey_q1_b }}</label>
                     <label class="option"><input type="radio" name="q1" value="1"> {{ t.survey_q1_c }}</label>
                 </div>
-                
-                <!-- Do the same for Q2, Q3, Q4... -->
-                
+
+                <!-- Q2 -->
+                <div class="q-block">
+                    <h3>{{ t.survey_q2 }}</h3>
+                    <label class="option"><input type="radio" name="q2" value="0" required> {{ t.survey_q2_a }}</label>
+                    <label class="option"><input type="radio" name="q2" value="1"> {{ t.survey_q2_b }}</label>
+                    <label class="option"><input type="radio" name="q2" value="1"> {{ t.survey_q2_c }}</label>
+                </div>
+
+                <!-- Q3 -->
+                <div class="q-block">
+                    <h3>{{ t.survey_q3 }}</h3>
+                    <label class="option"><input type="radio" name="q3" value="0" required> {{ t.survey_q3_a }}</label>
+                    <label class="option"><input type="radio" name="q3" value="1"> {{ t.survey_q3_b }}</label>
+                    <label class="option"><input type="radio" name="q3" value="1"> {{ t.survey_q3_c }}</label>
+                </div>
+
+                <!-- Q4 -->
+                <div class="q-block" style="border-bottom: none;">
+                    <h3>{{ t.survey_q4 }}</h3>
+                    <label class="option"><input type="radio" name="q4" value="0" required> {{ t.survey_q4_a }}</label>
+                    <label class="option"><input type="radio" name="q4" value="1"> {{ t.survey_q4_b }}</label>
+                    <label class="option"><input type="radio" name="q4" value="1"> {{ t.survey_q4_c }}</label>
+                </div>
+
                 <button type="submit" class="btn">{{ t.survey_btn }}</button>
             </form>
-
-                
         </div>
     </div>
 
@@ -52,7 +74,7 @@
                 score += parseInt(value);
             }
             
-            // Determine tier
+            // Determine tier (Beginner: 0-2, Intermediate: 3, Advanced: 4)
             let level = 'beginner';
             if (score >= 3) level = 'intermediate';
             if (score === 4) level = 'advanced';
