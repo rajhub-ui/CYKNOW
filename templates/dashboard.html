@@ -90,7 +90,10 @@
 
     <!-- SIDEBAR -->
     <div class="sidebar">
-        <div class="logo">🛡️ CyberFit</div>
+        <a href="/" class="logo" style="text-decoration: none; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 2rem;">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="CyberFit Logo" style="height: 35px; width: 35px; border-radius: 50%; object-fit: cover;">
+            <span style="font-size: 1.25rem; font-weight: 800; color: #111;">CyberFit</span>
+        </a>
         
         <a href="/dashboard" class="nav-item active">📊 {{ t.nav_dash }}</a>
         <a href="/learning" class="nav-item">📚 {{ t.nav_learn }}</a>
