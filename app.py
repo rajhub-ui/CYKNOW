@@ -162,9 +162,11 @@ def login():
             'SELECT id, name, email, password_hash FROM users WHERE email = ?', (email,)
         ).fetchone()
 
-        if not user or not verify_password(password, user['password_hash']):
-            return jsonify({'error': 'Invalid email or password'}), 401
+        if user['password_hash'] == 'OAUTH_USER_NO_PASSWORD':
+            return jsonify({'error': 'This account was created with Google. Please use "Continue with Google".'}), 401
 
+        if not verify_password(password, user['password_hash']):
+            return jsonify({'error': 'Invalid password. Please try again.'}), 401
         token = create_token(user['id'], user['email'])
         session['user_id'] = user['id']
         
@@ -216,7 +218,7 @@ def contacts_page():
 # ============ DASHBOARD & SURVEY ============
 @app.route('/')
 def home():
-    return redirect('/dashboard')
+    return render_template('home.html')
 
 @app.route('/dashboard')
 def dashboard_page():
@@ -455,7 +457,7 @@ def google_authorized():
             # Returning verified user -> Log in directly
             token = create_token(user['id'], user['email'])
             session['user_id'] = user['id']
-            return redirect('/dashboard') 
+            return redirect(f'/dashboard?token={token}') 
         
         else:
             # New user OR unverified user -> Generate OTP
@@ -509,7 +511,7 @@ def verify_email():
             # Log them in
             token = create_token(user['id'], user['email'])
             session['user_id'] = user['id']
-            return redirect('/dashboard')
+            return redirect(f'/dashboard?token={token}') 
         finally:
             conn.close()
 

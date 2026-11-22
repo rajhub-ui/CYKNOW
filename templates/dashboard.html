@@ -219,6 +219,13 @@
     </a>
 
     <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token');
+        if (urlToken) {
+            localStorage.setItem('cyberfit_token', urlToken);
+            // Clean the URL so it looks nice (removes the ?token=... part)
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
         const TOKEN_KEY = 'cyberfit_token';
         const token = localStorage.getItem(TOKEN_KEY);
         let chartInstance = null;
