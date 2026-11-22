@@ -200,14 +200,18 @@ def test_page():
 
 @app.route('/phishing')
 def phishing_page():
+    if 'user_id' not in session: return redirect('/test')
     return render_template('phishing.html')
 
 @app.route('/digital-arrest')
 def digital_arrest_page():
+    if 'user_id' not in session: return redirect('/test')
     return render_template('digital_arrest.html')
 
 @app.route('/malicious-app')
 def malicious_app_page():
+    if 'user_id' not in session: return redirect('/test')
+
     return render_template('malicious_app.html')
 
 @app.route('/contacts')
@@ -284,7 +288,7 @@ def survey_submit():
 @app.route('/learning')
 def learning_page():
     user_id = session.get('user_id')
-    if not user_id:
+    if 'user_id' not in session: 
         return redirect('/test')
 
     conn = get_db()
@@ -531,7 +535,7 @@ def verify_email():
 
 # ============ REPORTING ============
 @app.route('/api/report-1930', methods=['POST'])
-@token_required
+#@token_required
 def generate_report():
     data = request.get_json(silent=True) or {}
     scam_type = data.get('scam_type', 'Unknown')
