@@ -69,11 +69,19 @@
     </div>
 
     <!-- We pass data from Python to JS safely using tojson -->
+    <script id="module-data" type="application/json">
+        {{ {
+            'points': module.points,
+            'intro': module.intro,
+            'image': module.image | default('')
+        } | tojson }}
+    </script>
+
     <script>
-        const points = {{ module.points | tojson }};
-        const moduleIntro = {{ module.intro | tojson }};
-        const moduleKey = {{ module_key | tojson }};
-        const moduleImage = {{ module.image | default('') | tojson }}; 
+        const moduleData = JSON.parse(document.getElementById('module-data').textContent);
+        const points = moduleData.points;
+        const moduleIntro = moduleData.intro;
+        const moduleImage = moduleData.image;
     </script>
 
     <div class="card-container">
@@ -104,7 +112,7 @@
             <div class="nav-btns">
                 <button class="btn btn-prev" id="prev-btn" onclick="prevPoint()" style="visibility: hidden;">Prev</button>
                 <button class="btn btn-next" id="next-btn" onclick="nextPoint()">Next</button>
-                <a href="/{{ moduleKey | replace('_', '-') }}" class="btn btn-test" id="test-btn">Take Test →</a>
+                <a href="/{{ module_key | replace('_', '-') }}" class="btn btn-test" id="test-btn">Take Test →</a>
             </div>
         </div>
     </div>
