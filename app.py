@@ -218,7 +218,8 @@ def contacts_page():
 # ============ DASHBOARD & SURVEY ============
 @app.route('/')
 def home():
-    return render_template('home.html')
+    is_logged_in = 'user_id' in session
+    return render_template('home.html', is_logged_in=is_logged_in)
 
 @app.route('/dashboard')
 def dashboard_page():
