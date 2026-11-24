@@ -7,3 +7,4 @@ flask-dance
 python-dotenv
 psycopg2-binary
 gunicorn
+huggingface_hub
