@@ -1,4 +1,10 @@
-from datetime import datetime, timezone
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+from datetime import datetime, timezone, timedelta
 from flask import Flask, jsonify, request, render_template, g, session, redirect, url_for
 from flask_cors import CORS
 from database import init_db, get_db
@@ -7,9 +13,9 @@ import json
 import random
 import smtplib
 from email.mime.text import MIMEText
-from datetime import datetime, timedelta
 from flask_dance.contrib.google import make_google_blueprint, google
 from triage import analyze_scam_message
+
 # Content Imports
 from phishing_content import PHISHING_QUESTIONS
 from digital_arrest_scam import DIGITAL_ARREST_SCENARIO
@@ -20,32 +26,29 @@ from translations import TRANSLATIONS
 
 app = Flask(__name__)
 CORS(app)
-app.secret_key = 'cyberfit-secret-key-123' # Required for sessions
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'fallback-secret-key')
+
 # ============ GOOGLE OAUTH SETUP ============
-import os
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # For local testing only
 os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
 
-# You must get these from console.cloud.google.com
-GOOGLE_CLIENT_ID = "920919631814-8l0rned731rugtncho568fevfm2akjjb.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET = "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"
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 
 google_bp = make_google_blueprint(
     client_id=GOOGLE_CLIENT_ID,
     client_secret=GOOGLE_CLIENT_SECRET,
     redirect_to="google_authorized",
-    scope = [
-    "openid",
-    "https://www.googleapis.com/auth/userinfo.email",
-    "https://www.googleapis.com/auth/userinfo.profile"
-],
-
-reprompt_select_account=True
+    scope=[
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile"
+    ],
+    reprompt_select_account=True
 )
 app.register_blueprint(google_bp, url_prefix="/login")
 
 # ============ EMAIL OTP SENDER ============
-# Replace with your actual Gmail and App Password
 SENDER_EMAIL = "your_email@gmail.com"
 SENDER_PASSWORD = "your_16_letter_app_password" 
 
@@ -99,11 +102,10 @@ def health():
 def db_check():
     conn = get_db()
     try:
-        tables = conn.execute(
-            "SELECT name FROM sqlite_master "
-            "WHERE type='table' AND name NOT LIKE 'sqlite_%'"
-        ).fetchall()
-        return jsonify({'status': 'ok', 'tables': [t['name'] for t in tables]})
+        cur = conn.cursor()
+        cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema='public'")
+        tables = [row['table_name'] for row in cur.fetchall()]
+        return jsonify({'status': 'ok', 'tables': tables})
     finally:
         conn.close()
 
@@ -125,17 +127,19 @@ def register():
 
     conn = get_db()
     try:
-        existing = conn.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
+        cur = conn.cursor()
+        cur.execute('SELECT id FROM users WHERE email = %s', (email,))
+        existing = cur.fetchone()
         if existing:
             return jsonify({'error': 'Email already registered'}), 409
 
         password_hash = hash_password(password)
-        cur = conn.execute(
-            'INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)',
+        cur.execute(
+            'INSERT INTO users (name, email, password_hash) VALUES (%s, %s, %s) RETURNING id',
             (name, email, password_hash)
         )
         conn.commit()
-        user_id = cur.lastrowid
+        user_id = cur.fetchone()['id']
         token = create_token(user_id, email)
         session['user_id'] = user_id
 
@@ -158,15 +162,21 @@ def login():
 
     conn = get_db()
     try:
-        user = conn.execute(
-            'SELECT id, name, email, password_hash FROM users WHERE email = ?', (email,)
-        ).fetchone()
+        cur = conn.cursor()
+        cur.execute(
+            'SELECT id, name, email, password_hash FROM users WHERE email = %s', (email,)
+        )
+        user = cur.fetchone()
+
+        if not user:
+            return jsonify({'error': 'Account not found. Please sign up.'}), 401
 
         if user['password_hash'] == 'OAUTH_USER_NO_PASSWORD':
             return jsonify({'error': 'This account was created with Google. Please use "Continue with Google".'}), 401
 
         if not verify_password(password, user['password_hash']):
             return jsonify({'error': 'Invalid password. Please try again.'}), 401
+            
         token = create_token(user['id'], user['email'])
         session['user_id'] = user['id']
         
@@ -183,9 +193,11 @@ def login():
 def me():
     conn = get_db()
     try:
-        user = conn.execute(
-            'SELECT id, name, email, language, created_at FROM users WHERE id = ?', (g.user_id,)
-        ).fetchone()
+        cur = conn.cursor()
+        cur.execute(
+            'SELECT id, name, email, language, created_at FROM users WHERE id = %s', (g.user_id,)
+        )
+        user = cur.fetchone()
         if not user:
             return jsonify({'error': 'User not found'}), 404
         return jsonify({'user': dict(user)})
@@ -211,7 +223,6 @@ def digital_arrest_page():
 @app.route('/malicious-app')
 def malicious_app_page():
     if 'user_id' not in session: return redirect('/test')
-
     return render_template('malicious_app.html')
 
 @app.route('/contacts')
@@ -234,15 +245,17 @@ def dashboard_page():
 def api_dashboard():
     conn = get_db()
     try:
-        # MAKE SURE TO SELECT difficulty_level HERE
-        user = conn.execute(
-            'SELECT name, difficulty_level FROM users WHERE id = ?', (g.user_id,)
-        ).fetchone()
+        cur = conn.cursor()
+        cur.execute(
+            'SELECT name, difficulty_level FROM users WHERE id = %s', (g.user_id,)
+        )
+        user = cur.fetchone()
         
-        attempts = conn.execute(
+        cur.execute(
             'SELECT module_type, score, attempted_at FROM attempts '
-            'WHERE user_id = ? ORDER BY attempted_at ASC', (g.user_id,)
-        ).fetchall()
+            'WHERE user_id = %s ORDER BY attempted_at ASC', (g.user_id,)
+        )
+        attempts = cur.fetchall()
 
         attempts_list = [dict(a) for a in attempts]
         module_scores = {}
@@ -263,7 +276,7 @@ def api_dashboard():
 
 @app.route('/logout')
 def logout():
-    session.clear() # This clears the user_id AND the language
+    session.clear() 
     return redirect('/test')
 
 @app.route('/survey')
@@ -278,7 +291,8 @@ def survey_submit():
     
     conn = get_db()
     try:
-        conn.execute('UPDATE users SET difficulty_level = ? WHERE id = ?', (level, g.user_id))
+        cur = conn.cursor()
+        cur.execute('UPDATE users SET difficulty_level = %s WHERE id = %s', (level, g.user_id))
         conn.commit()
     finally:
         conn.close()
@@ -288,17 +302,18 @@ def survey_submit():
 @app.route('/learning')
 def learning_page():
     user_id = session.get('user_id')
-    if 'user_id' not in session: 
+    if not user_id: 
         return redirect('/test')
 
     conn = get_db()
     try:
-        user = conn.execute('SELECT difficulty_level FROM users WHERE id = ?', (user_id,)).fetchone()
+        cur = conn.cursor()
+        cur.execute('SELECT difficulty_level FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
         level = user['difficulty_level'] if user else 'unassessed'
     finally:
         conn.close()
 
-    # If they haven't taken the survey, redirect them!
     if level == 'unassessed':
         return redirect('/survey')
 
@@ -318,7 +333,9 @@ def learn_module(module_key):
 
     conn = get_db()
     try:
-        user = conn.execute('SELECT difficulty_level FROM users WHERE id = ?', (user_id,)).fetchone()
+        cur = conn.cursor()
+        cur.execute('SELECT difficulty_level FROM users WHERE id = %s', (user_id,))
+        user = cur.fetchone()
         level = user['difficulty_level'] if user and user['difficulty_level'] != 'unassessed' else 'beginner'
     finally:
         conn.close()
@@ -328,7 +345,6 @@ def learn_module(module_key):
     if module_key not in LEARNING_MODULES:
         return redirect('/learning')
 
-    # Get the specific module data
     module_data = LEARNING_MODULES[module_key].get(level, LEARNING_MODULES[module_key]['beginner'])[lang]
 
     return render_template('learn_module.html', module=module_data, module_key=module_key, user_level=level)
@@ -368,8 +384,9 @@ def phishing_submit():
     score = int((correct_count / len(PHISHING_QUESTIONS)) * 100)
     conn = get_db()
     try:
-        conn.execute(
-            'INSERT INTO attempts (user_id, module_type, score, answers_json) VALUES (?, ?, ?, ?)',
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO attempts (user_id, module_type, score, answers_json) VALUES (%s, %s, %s, %s)',
             (g.user_id, 'phishing', score, json.dumps(answer_map))
         )
         conn.commit()
@@ -389,8 +406,9 @@ def digital_arrest_submit():
     score = int(data.get('score', 0))
     conn = get_db()
     try:
-        conn.execute(
-            'INSERT INTO attempts (user_id, module_type, score, answers_json) VALUES (?, ?, ?, ?)',
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO attempts (user_id, module_type, score, answers_json) VALUES (%s, %s, %s, %s)',
             (g.user_id, 'digital_arrest', score, json.dumps({'completed': True}))
         )
         conn.commit()
@@ -428,8 +446,9 @@ def malicious_app_submit():
     score = int((correct_count / len(APP_QUESTIONS)) * 100)
     conn = get_db()
     try:
-        conn.execute(
-            'INSERT INTO attempts (user_id, module_type, score, answers_json) VALUES (?, ?, ?, ?)',
+        cur = conn.cursor()
+        cur.execute(
+            'INSERT INTO attempts (user_id, module_type, score, answers_json) VALUES (%s, %s, %s, %s)',
             (g.user_id, 'malicious_app', score, json.dumps(answer_map))
         )
         conn.commit()
@@ -456,31 +475,28 @@ def google_authorized():
 
     conn = get_db()
     try:
-        user = conn.execute('SELECT * FROM users WHERE email = ? OR google_id = ?', (email, google_id)).fetchone()
+        cur = conn.cursor()
+        cur.execute('SELECT * FROM users WHERE email = %s OR google_id = %s', (email, google_id))
+        user = cur.fetchone()
         
         if user and user['is_verified']:
-            # Returning verified user -> Log in directly
             token = create_token(user['id'], user['email'])
             session['user_id'] = user['id']
             return redirect(f'/dashboard?token={token}') 
         
         else:
-            # New user OR unverified user -> Generate OTP
             otp = str(random.randint(100000, 999999))
             expiry = datetime.now() + timedelta(minutes=10)
             
             if user:
-                # Update existing unverified user
-                conn.execute('UPDATE users SET otp_code = ?, otp_expiry = ? WHERE id = ?', (otp, expiry, user['id']))
+                cur.execute('UPDATE users SET otp_code = %s, otp_expiry = %s WHERE id = %s', (otp, expiry, user['id']))
                 user_id = user['id']
             else:
-                # Create new user
-                cur = conn.execute('INSERT INTO users (name, email, google_id, is_verified, otp_code, otp_expiry) VALUES (?, ?, ?, 0, ?, ?)', 
-                                   (name, email, google_id, otp, expiry))
-                user_id = cur.lastrowid
+                cur.execute('INSERT INTO users (name, email, google_id, is_verified, otp_code, otp_expiry) VALUES (%s, %s, %s, 0, %s, %s) RETURNING id', 
+                            (name, email, google_id, otp, expiry))
+                user_id = cur.fetchone()['id']
             conn.commit()
             
-            # Send OTP (Print to console for testing)
             print(f"\n=== 🚨 MOCK EMAIL SENT TO {email} ===")
             print(f"YOUR OTP IS: {otp}")
             print("=======================================\n")
@@ -499,28 +515,27 @@ def verify_email():
         
         conn = get_db()
         try:
-            user = conn.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+            cur = conn.cursor()
+            cur.execute('SELECT * FROM users WHERE id = %s', (user_id,))
+            user = cur.fetchone()
             
             if not user or user['otp_code'] != entered_otp:
                 return "❌ Invalid OTP. Please try again.", 400
             
             # Check expiry
-            expiry = datetime.strptime(user['otp_expiry'], '%Y-%m-%d %H:%M:%S.%f')
+            expiry = datetime.strptime(str(user['otp_expiry']), '%Y-%m-%d %H:%M:%S.%f')
             if datetime.now() > expiry:
                 return "❌ OTP Expired. Please log in again.", 400
                 
-            # Mark verified
-            conn.execute('UPDATE users SET is_verified = 1, otp_code = NULL WHERE id = ?', (user_id,))
+            cur.execute('UPDATE users SET is_verified = 1, otp_code = NULL WHERE id = %s', (user_id,))
             conn.commit()
             
-            # Log them in
             token = create_token(user['id'], user['email'])
             session['user_id'] = user['id']
             return redirect(f'/dashboard?token={token}') 
         finally:
             conn.close()
 
-    # Simple form to enter OTP (You can style this beautifully)
     return '''
         <div style="font-family: sans-serif; text-align: center; margin-top: 100px;">
             <h2>Check Your Email</h2>
@@ -535,7 +550,6 @@ def verify_email():
 
 # ============ REPORTING ============
 @app.route('/api/report-1930', methods=['POST'])
-#@token_required
 def generate_report():
     data = request.get_json(silent=True) or {}
     scam_type = data.get('scam_type', 'Unknown')

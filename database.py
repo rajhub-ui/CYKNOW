@@ -1,24 +1,27 @@
-import sqlite3
 import os
+import psycopg2
+import psycopg2.extras
+from dotenv import load_dotenv
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'cyberfit.db')
+load_dotenv()
 
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 def get_db():
-    """Open a connection with foreign keys enabled and dict-like rows."""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA foreign_keys = ON')
+    """Connects to the Neon PostgreSQL database."""
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    # This makes the rows behave like dictionaries (like sqlite3.Row did)
+    conn.cursor_factory = psycopg2.extras.RealDictCursor 
     return conn
-
 
 def init_db():
     """Create all tables if they don't exist."""
     conn = get_db()
+    cursor = conn.cursor()
     try:
-        conn.executescript('''
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 name TEXT,
                 email TEXT UNIQUE,
                 phone TEXT UNIQUE,
@@ -33,72 +36,62 @@ def init_db():
             );
 
             CREATE TABLE IF NOT EXISTS attempts (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id),
                 module_type TEXT NOT NULL,
                 score INTEGER NOT NULL,
                 answers_json TEXT,
-                attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                attempted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS link_checks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
                 url TEXT NOT NULL,
                 verdict TEXT NOT NULL,
-                checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
 
             CREATE TABLE IF NOT EXISTS reports (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER NOT NULL REFERENCES users(id),
                 scam_type TEXT NOT NULL,
                 description TEXT,
-                reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id)
+                reported_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
         ''')
         
         # --- SELF-HEALING MIGRATIONS ---
-        cursor = conn.execute("PRAGMA table_info(users)")
-        columns = [col[1] for col in cursor.fetchall()]
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='users';
+        """)
+        columns = [row['column_name'] for row in cursor.fetchall()]
         
         if 'difficulty_level' not in columns:
-            conn.execute("ALTER TABLE users ADD COLUMN difficulty_level TEXT DEFAULT 'unassessed'")
-            print('✅ Upgraded DB: Added difficulty_level')
+            cursor.execute("ALTER TABLE users ADD COLUMN difficulty_level TEXT DEFAULT 'unassessed'")
             
-        # NOTE: We add the column without UNIQUE here, then create a UNIQUE INDEX below
         if 'google_id' not in columns:
-            conn.execute("ALTER TABLE users ADD COLUMN google_id TEXT")
-            print('✅ Upgraded DB: Added google_id')
+            cursor.execute("ALTER TABLE users ADD COLUMN google_id TEXT UNIQUE")
             
         if 'is_verified' not in columns:
-            conn.execute("ALTER TABLE users ADD COLUMN is_verified INTEGER DEFAULT 0")
-            print('✅ Upgraded DB: Added is_verified')
+            cursor.execute("ALTER TABLE users ADD COLUMN is_verified INTEGER DEFAULT 0")
             
         if 'otp_code' not in columns:
-            conn.execute("ALTER TABLE users ADD COLUMN otp_code TEXT")
-            print('✅ Upgraded DB: Added otp_code')
+            cursor.execute("ALTER TABLE users ADD COLUMN otp_code TEXT")
             
         if 'otp_expiry' not in columns:
-            conn.execute("ALTER TABLE users ADD COLUMN otp_expiry TIMESTAMP")
-            print('✅ Upgraded DB: Added otp_expiry')
+            cursor.execute("ALTER TABLE users ADD COLUMN otp_expiry TIMESTAMP")
 
         if 'phone' not in columns:
-            conn.execute("ALTER TABLE users ADD COLUMN phone TEXT")
-            print('✅ Upgraded DB: Added phone')
-
-        # Add unique indexes safely for existing tables
-        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)")
-        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_phone ON users(phone)")
+            cursor.execute("ALTER TABLE users ADD COLUMN phone TEXT UNIQUE")
 
         conn.commit()
-        print('✅ Database initialized successfully')
+        print('✅ PostgreSQL Database initialized successfully')
+    except Exception as e:
+        print(f"Error initializing DB: {e}")
+        conn.rollback()
     finally:
+        cursor.close()
         conn.close()
-
-# Run directly to init the DB manually (useful for testing)
-if __name__ == '__main__':
-    init_db()
