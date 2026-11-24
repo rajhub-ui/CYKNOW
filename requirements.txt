@@ -1,6 +1,9 @@
-flask
+Flask
 flask-cors
-pyjwt
+PyJWT
 bcrypt
 requests
-psycopg2-binary 
+flask-dance
+python-dotenv
+psycopg2-binary
+gunicorn
