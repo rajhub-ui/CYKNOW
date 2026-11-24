@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberFit — Citizen Cyber Resilience Platform</title>
+    
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Inter for that clean, tech look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
+                    colors: {
+                        darkbg: '#050505',
+                        panel: '#0a0a0a',
+                        borderlight: 'rgba(255,255,255,0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-darkbg text-white font-sans antialiased overflow-x-hidden relative min-h-screen flex flex-col">
+
+    <!-- LANGUAGE POPUP MODAL -->
+    {% if show_lang_popup %}
+    <div class="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-panel border border-borderlight p-8 rounded-2xl max-w-sm w-full text-center shadow-2xl">
+            <div class="text-4xl mb-4">🌐</div>
+            <h2 class="text-xl font-bold mb-2">{{ t.lang_popup_title }}</h2>
+            <p class="text-gray-400 mb-6 text-sm">{{ t.lang_popup_desc }}</p>
+            <div class="flex gap-3">
+                <a href="/set_language/en" class="flex-1 bg-white text-black py-3 rounded-lg font-semibold hover:bg-gray-200 transition">English</a>
+                <a href="/set_language/hi" class="flex-1 bg-transparent border border-borderlight text-white py-3 rounded-lg font-semibold hover:bg-white/5 transition">हिंदी</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- NAVBAR (Matching the screenshot's thin, structured look) -->
+    <nav class="fixed w-full top-0 z-50 bg-darkbg/90 backdrop-blur-md border-b border-borderlight">
+        <div class="max-w-[1400px] mx-auto flex items-center justify-between h-16 px-6">
+            
+            <!-- Logo -->
+            <a href="/" class="flex items-center gap-3 border-r border-borderlight pr-6 h-full">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="CyberFit" class="h-8 w-8 rounded-full object-cover">
+                <span class="text-lg font-bold tracking-widest uppercase">CyberFit</span>
+            </a>
+
+            <!-- Desktop Links (Hidden on Mobile) -->
+            <div class="hidden lg:flex items-center gap-8 text-xs font-semibold tracking-widest text-gray-400 uppercase h-full">
+                <a href="/" class="text-white">Home</a>
+                <a href="#features" class="hover:text-white transition">Features</a>
+                <a href="#tools" class="hover:text-white transition">Tools</a>
+                <a href="/contacts" class="hover:text-white transition">Contacts</a>
+                <a href="/report" class="hover:text-white transition">Report</a>
+            </div>
+
+            <!-- Right Side Actions -->
+            <div class="flex items-center h-full">
+                <!-- Language Toggle -->
+                <div class="hidden lg:flex items-center gap-2 text-xs font-bold px-6 border-l border-borderlight h-full">
+                    <a href="/set_language/en" class="{% if current_lang == 'en' %}text-white{% else %}text-gray-500 hover:text-gray-300{% endif %} transition">EN</a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/set_language/hi" class="{% if current_lang == 'hi' %}text-white{% else %}text-gray-500 hover:text-gray-300{% endif %} transition">HI</a>
+                </div>
+
+                <!-- Login/Dashboard Button -->
+                <div class="hidden lg:flex border-l border-borderlight pl-6 h-full items-center">
+                    {% if is_logged_in %}
+                        <a href="/dashboard" class="text-xs font-semibold tracking-widest uppercase hover:text-gray-300 transition">Dashboard ↗</a>
+                    {% else %}
+                        <a href="/test" class="text-xs font-semibold tracking-widest uppercase hover:text-gray-300 transition">Join the Hub ↗</a>
+                    {% endif %}
+                </div>
+
+                <!-- Hamburger Button (Mobile) -->
+                <button onclick="toggleMenu()" class="lg:hidden p-2 text-white hover:bg-white/10 rounded-lg transition focus:outline-none">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MOBILE SLIDE-OUT MENU -->
+    <div id="menu-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden transition-opacity" onclick="toggleMenu()"></div>
+    <div id="side-menu" class="fixed top-0 right-0 h-full w-80 bg-panel border-l border-borderlight z-[70] shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+        <div class="p-6 flex justify-between items-center border-b border-borderlight">
+            <span class="text-sm font-bold tracking-widest uppercase">Menu</span>
+            <button onclick="toggleMenu()" class="p-2 text-gray-400 hover:text-white rounded-lg transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto p-4 space-y-2 text-sm font-medium">
+            <a href="/contacts" class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition">📞 Emergency Contacts</a>
+            <a href="/report" class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition">📝 Report a Scam</a>
+            <a href="/phishing" class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition">🎣 Phishing Simulation</a>
+            <a href="/digital-arrest" class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition">🚨 Digital Arrest</a>
+            <a href="/malicious-app" class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition">📱 Malicious Apps</a>
+            <a href="/learning" class="flex items-center gap-3 px-3 py-3 rounded-lg text-gray-300 hover:bg-white/5 hover:text-white transition">📚 Learning Guides</a>
+        </div>
+        <div class="p-6 border-t border-borderlight">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-bold text-gray-500 uppercase tracking-widest">Language</span>
+                <div class="flex gap-2 text-sm font-bold">
+                    <a href="/set_language/en" class="{% if current_lang == 'en' %}text-white{% else %}text-gray-500{% endif %}">EN</a>
+                    <span class="text-gray-700">/</span>
+                    <a href="/set_language/hi" class="{% if current_lang == 'hi' %}text-white{% else %}text-gray-500{% endif %}">HI</a>
+                </div>
+            </div>
+            {% if is_logged_in %}
+                <a href="/dashboard" class="block w-full text-center bg-white text-black py-3 rounded-lg font-bold hover:bg-gray-200 transition">Dashboard</a>
+            {% else %}
+                <a href="/test" class="block w-full text-center bg-white text-black py-3 rounded-lg font-bold hover:bg-gray-200 transition">Log In / Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- HERO SECTION (Split Screen) -->
+    <main class="flex-grow pt-16">
+        <section class="max-w-[1400px] mx-auto px-6 grid lg:grid-cols-2 gap-12 min-h-[85vh] items-center relative">
+            
+            <!-- Left Content -->
+            <div class="z-10 pt-12 lg:pt-0">
+                <h1 class="text-5xl lg:text-7xl xl:text-[5.5rem] font-semibold tracking-tighter leading-[1.05] mb-8">
+                    <!-- Using | safe to allow the gradient span to render -->
+                    {{ t.home_title | safe }}
+                </h1>
+                <p class="text-lg lg:text-xl text-gray-400 mb-10 max-w-lg leading-relaxed">
+                    {{ t.home_desc }}
+                </p>
+                
+                <div class="flex flex-col sm:flex-row gap-4">
+                    {% if is_logged_in %}
+                        <a href="/dashboard" class="bg-white text-black px-8 py-4 rounded-md font-bold text-sm tracking-widest uppercase hover:bg-gray-200 transition text-center">Enter Dashboard</a>
+                    {% else %}
+                        <a href="/test" class="bg-white text-black px-8 py-4 rounded-md font-bold text-sm tracking-widest uppercase hover:bg-gray-200 transition text-center">Start Training</a>
+                        <a href="#features" class="border border-borderlight text-white px-8 py-4 rounded-md font-bold text-sm tracking-widest uppercase hover:bg-white/5 transition text-center">Explore Features</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Right Visual (Glowing Tech Image) -->
+            <div class="relative h-[400px] lg:h-[600px] w-full flex items-center justify-center pointer-events-none">
+                <!-- Background Glow -->
+                <div class="absolute inset-0 bg-gradient-to-tr from-purple-900/40 via-blue-900/20 to-transparent blur-3xl rounded-full"></div>
+                
+                <!-- Tech Image (You can replace this URL with your own 3D tech render) -->
+                <img src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=2070&auto=format&fit=crop" 
+                     alt="Cybersecurity Hardware" 
+                     class="relative z-10 w-full h-full object-cover rounded-2xl mix-blend-screen opacity-80 border border-white/10"
+                     style="mask-image: radial-gradient(circle, black 50%, transparent 100%); -webkit-mask-image: radial-gradient(circle, black 50%, transparent 100%);">
+            </div>
+        </section>
+
+        <!-- SCROLL INDICATOR (Matches the screenshot) -->
+        <div class="border-y border-borderlight bg-panel">
+            <div class="max-w-[1400px] mx-auto px-6 py-4 flex justify-between items-center text-xs font-semibold tracking-widest text-gray-400 uppercase">
+                <span>Scroll to explore</span>
+                <svg class="w-4 h-4 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+            </div>
+        </div>
+
+        <!-- LAYERED DEFENSE / FEATURES SECTION -->
+        <section id="features" class="max-w-[1400px] mx-auto px-6 py-24">
+            <div class="grid lg:grid-cols-2 gap-16">
+                <!-- Left: Big Title -->
+                <div>
+                    <h2 class="text-4xl lg:text-6xl font-semibold tracking-tighter leading-tight mb-6">
+                        <span class="text-gray-600">Layered</span><br>
+                        Defense Strategy
+                    </h2>
+                </div>
+
+                <!-- Right: Grid of Features -->
+                <div class="grid sm:grid-cols-2 gap-10">
+                    <div>
+                        <div class="text-2xl mb-3">🎮</div>
+                        <h3 class="text-lg font-bold mb-2">{{ t.home_f1_title }}</h3>
+                        <p class="text-sm text-gray-400 leading-relaxed">{{ t.home_f1_desc }}</p>
+                    </div>
+                    <div>
+                        <div class="text-2xl mb-3">🚨</div>
+                        <h3 class="text-lg font-bold mb-2">{{ t.home_f2_title }}</h3>
+                        <p class="text-sm text-gray-400 leading-relaxed">{{ t.home_f2_desc }}</p>
+                    </div>
+                    <div>
+                        <div class="text-2xl mb-3">🇮🇳</div>
+                        <h3 class="text-lg font-bold mb-2">{{ t.home_f3_title }}</h3>
+                        <p class="text-sm text-gray-400 leading-relaxed">{{ t.home_f3_desc }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TOOLS PREVIEW (Dark Cards) -->
+                <!-- TOOLS PREVIEW (Dark Cards with Images) -->
+        <section id="tools" class="bg-panel border-t border-borderlight py-24">
+            <div class="max-w-[1400px] mx-auto px-6">
+                <div class="mb-16">
+                    <h2 class="text-3xl font-semibold tracking-tight mb-4">{{ t.home_pg_title }}</h2>
+                    <p class="text-gray-400">{{ t.home_pg_sub }}</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Card 1: Phishing -->
+                    <a href="/phishing" class="group block bg-darkbg border border-borderlight rounded-xl hover:border-white/30 transition duration-300 overflow-hidden shadow-lg">
+                        <!-- Image Header -->
+                        <div class="h-48 w-full overflow-hidden border-b border-borderlight">
+                            <img src="{{ url_for('static', filename='images/phishing_card.jpg') }}" alt="Phishing Simulation" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.src='https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=1000&auto=format&fit=crop'">
+                        </div>
+                        <!-- Content -->
+                        <div class="p-8">
+                            <div class="text-xs font-bold tracking-widest text-blue-400 uppercase mb-3">Simulation</div>
+                            <h4 class="text-xl font-bold mb-2">{{ t.pg_phishing }}</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed mb-8">{{ t.home_pg_desc_phish }}</p>
+                            <div class="text-sm font-semibold text-white flex items-center gap-2 group-hover:gap-4 transition-all">Launch Tool <span class="text-lg">→</span></div>
+                        </div>
+                    </a>
+
+                    <!-- Card 2: Digital Arrest -->
+                    <a href="/digital-arrest" class="group block bg-darkbg border border-borderlight rounded-xl hover:border-white/30 transition duration-300 overflow-hidden shadow-lg">
+                        <!-- Image Header -->
+                        <div class="h-48 w-full overflow-hidden border-b border-borderlight">
+                            <img src="{{ url_for('static', filename='images/arrest_card.jpg') }}" alt="Digital Arrest Simulation" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.src='https://images.unsplash.com/photo-1555881400-74d7acaacd8b?q=80&w=1000&auto=format&fit=crop'">
+                        </div>
+                        <!-- Content -->
+                        <div class="p-8">
+                            <div class="text-xs font-bold tracking-widest text-red-400 uppercase mb-3">Simulation</div>
+                            <h4 class="text-xl font-bold mb-2">{{ t.pg_arrest }}</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed mb-8">{{ t.home_pg_desc_arrest }}</p>
+                            <div class="text-sm font-semibold text-white flex items-center gap-2 group-hover:gap-4 transition-all">Launch Tool <span class="text-lg">→</span></div>
+                        </div>
+                    </a>
+
+                    <!-- Card 3: Malicious Apps -->
+                    <a href="/malicious-app" class="group block bg-darkbg border border-borderlight rounded-xl hover:border-white/30 transition duration-300 overflow-hidden shadow-lg">
+                        <!-- Image Header -->
+                        <div class="h-48 w-full overflow-hidden border-b border-borderlight">
+                            <img src="{{ url_for('static', filename='images/malicious_app_card.jpg') }}" alt="Malicious Apps Simulation" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" onerror="this.src='https://images.unsplash.com/photo-1611162617474-5b21e879e113?q=80&w=1000&auto=format&fit=crop'">
+                        </div>
+                        <!-- Content -->
+                        <div class="p-8">
+                            <div class="text-xs font-bold tracking-widest text-green-400 uppercase mb-3">Simulation</div>
+                            <h4 class="text-xl font-bold mb-2">{{ t.pg_app }}</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed mb-8">{{ t.home_pg_desc_app }}</p>
+                            <div class="text-sm font-semibold text-white flex items-center gap-2 group-hover:gap-4 transition-all">Launch Tool <span class="text-lg">→</span></div>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-darkbg border-t border-borderlight py-12 text-center text-gray-500 text-sm">
+        <p class="mb-2">{{ t.home_footer1 }}</p>
+        <p>&copy; 2026 <strong class="text-white">CyberFit</strong>. {{ t.home_footer2 }}</p>
+    </footer>
+
+    <script>
+        function toggleMenu() {
+            const menu = document.getElementById('side-menu');
+            const overlay = document.getElementById('menu-overlay');
+            
+            if (menu.classList.contains('translate-x-full')) {
+                menu.classList.remove('translate-x-full');
+                menu.classList.add('translate-x-0');
+                overlay.classList.remove('hidden');
+            } else {
+                menu.classList.remove('translate-x-0');
+                menu.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
