@@ -23,8 +23,10 @@ from contact_content import GOVT_CONTACTS
 from malicious_app_content import APP_QUESTIONS
 from learning_content import LEARNING_MODULES
 from translations import TRANSLATIONS
-
+from werkzeug.middleware.proxy_fix import ProxyFix
 app = Flask(__name__)
+
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 CORS(app)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'fallback-secret-key')
 
