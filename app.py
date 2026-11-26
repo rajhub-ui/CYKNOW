@@ -51,8 +51,8 @@ google_bp = make_google_blueprint(
 app.register_blueprint(google_bp, url_prefix="/login")
 
 # ============ EMAIL OTP SENDER ============
-SENDER_EMAIL = "your_email@gmail.com"
-SENDER_PASSWORD = "your_16_letter_app_password" 
+SENDER_EMAIL = "rajeshsahukar23@gmail.com"
+SENDER_PASSWORD = "ketp mvcf nzvl bmnb" 
 
 def send_email_otp(receiver_email, otp):
     msg = MIMEText(f"Welcome to CyberFit!\n\nYour verification code is: {otp}\n\nThis code expires in 10 minutes.")
@@ -502,7 +502,8 @@ def google_authorized():
             print(f"\n=== 🚨 MOCK EMAIL SENT TO {email} ===")
             print(f"YOUR OTP IS: {otp}")
             print("=======================================\n")
-            
+
+            send_email_otp(email, otp)
             return redirect(f'/verify-email?user_id={user_id}')
     finally:
         conn.close()
